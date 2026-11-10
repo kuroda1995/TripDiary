@@ -2,13 +2,14 @@ package com.tripdiary.spot.dto;
 
 import com.tripdiary.spot.Visibility;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import java.time.LocalDate;
 import java.util.List;
 
-/** スポットの作成・更新リクエスト（docs/features/02_spot.md 5章）。写真は写真アップロード機能で追加する。 */
+/** スポットの作成・更新リクエスト（docs/features/02_spot.md 5章）。 */
 @Schema(description = "スポットの作成・更新リクエスト")
 public record SpotRequest(
         @Schema(example = "朝の清水寺")
@@ -29,4 +30,6 @@ public record SpotRequest(
         @Schema(description = "訪問日（未来日は不可）", example = "2026-10-03", nullable = true)
                 LocalDate visitedOn,
         @Schema(description = "公開範囲", example = "PUBLIC") @NotNull(message = "公開範囲を選択してください")
-                Visibility visibility) {}
+                Visibility visibility,
+        @Schema(description = "写真（0〜10枚）。更新時は送信した配列で置き換える（含まれない写真は削除）。省略時は写真なし", nullable = true)
+                List<@Valid @NotNull PhotoRequest> photos) {}

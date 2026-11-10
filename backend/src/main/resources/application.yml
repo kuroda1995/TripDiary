@@ -52,6 +52,21 @@ app:
     login-rate-limit:
       max-attempts: 10
       window: 5m
+  # 写真の保存先（docs/features/03_photo_upload.md）。
+  # 既定値はローカル開発用の S3Mock（docker compose）。本番の値は application-prod.yml を参照
+  storage:
+    bucket: ${S3_BUCKET:tripdiary-photos}
+    region: ${AWS_REGION:ap-northeast-1}
+    endpoint: ${S3_ENDPOINT:http://localhost:9090}
+    access-key: test
+    secret-key: test
+    public-base-url: ${PHOTO_BASE_URL:http://localhost:9090/tripdiary-photos}
+    presign-ttl: 5m
+    orphan-retention: 24h
+    orphan-cleanup:
+      enabled: true
+      # 毎時15分（UTC）
+      cron: "0 15 * * * *"
 
 logging:
   level:

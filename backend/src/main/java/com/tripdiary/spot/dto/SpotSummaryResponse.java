@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.function.UnaryOperator;
 
 /** 一覧用のスポット（感想は先頭のみ）。 */
 @Schema(description = "一覧用のスポット")
@@ -19,12 +20,17 @@ public record SpotSummaryResponse(
         @Schema(description = "感想の先頭（最大120文字、省略時は末尾に…）", nullable = true) String impressionExcerpt,
         @Schema(nullable = true) LocalDate visitedOn,
         Visibility visibility,
+        @Schema(description = "カバー写真（先頭の写真）の URL。写真がなければ null", nullable = true)
+                String coverPhotoUrl,
         UserResponse author,
         Instant createdAt) {
 
     static final int EXCERPT_LENGTH = 120;
 
-    public static SpotSummaryResponse from(Spot spot) {
+    /**
+     * @param photoUrl S3 キーから配信 URL を作る関数
+     */
+    public static SpotSummaryResponse from(Spot spot, UnaryOperator<String> photoUrl) {
         return new SpotSummaryResponse(
                 spot.getId(),
                 spot.getTitle(),
@@ -33,6 +39,7 @@ public record SpotSummaryResponse(
                 excerpt(spot.getImpression()),
                 spot.getVisitedOn(),
                 spot.getVisibility(),
+                spot.coverPhoto().map(photo -> photoUrl.apply(photo.getS3Key())).orElse(null),
                 UserResponse.from(spot.getUser()),
                 spot.getCreatedAt());
     }
