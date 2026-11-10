@@ -17,17 +17,17 @@
 mindmap
   root((TripDiary))
     Frontend
-      React 18
+      React 19
       TypeScript
       Vite
-      Tailwind CSS
-      shadcn/ui
+      Tailwind CSS v4
+      shadcn/ui（Base UI）
       React Router
       TanStack Query
       React Hook Form + Zod
     Backend
       Java 21
-      Spring Boot 3
+      Spring Boot 4
       Gradle
       Spring Web
       Spring Security + JWT
@@ -35,7 +35,7 @@ mindmap
       Bean Validation
       Flyway
       springdoc-openapi
-      Logback + logstash-logback-encoder
+      Logback（Spring Boot 構造化ログ）
     Database
       PostgreSQL 16
     Infrastructure
@@ -63,17 +63,19 @@ mindmap
 | 分類 | 技術 | 用途 / 選定理由 |
 | --- | --- | --- |
 | 言語（FE） | TypeScript | 型安全。API レスポンス型を OpenAPI から生成可能 |
-| UI | React + Vite | 高速な開発サーバー・ビルド |
-| スタイル | Tailwind CSS + shadcn/ui | ユーティリティCSS + アクセシブルなコンポーネント（Radix UI ベース） |
+| UI | React 19 + Vite | 高速な開発サーバー・ビルド |
+| ルーティング | React Router | SPA の画面遷移 |
+| スタイル | Tailwind CSS v4 + shadcn/ui | ユーティリティCSS + アクセシブルなコンポーネント（Base UI ベース） |
+| Lint / Format | oxlint + Prettier | oxlint は Vite 標準テンプレートの Linter。ESLint 互換ルールを高速に検査 |
 | サーバー状態 | TanStack Query | キャッシュ・楽観的更新（いいね/フォローのトグル） |
 | フォーム | React Hook Form + Zod | クライアント側バリデーション |
 | 言語（BE） | Java 21 (LTS) | |
-| FW | Spring Boot 3 | Web / Security / Data JPA / Actuator |
+| FW | Spring Boot 4 | Web MVC / Security / Data JPA / Actuator（3.x は OSS サポート終了のため 4.x を採用） |
 | 認証 | Spring Security + JWT（jjwt 等） | ステートレス認証。ALB 配下で水平スケール可能 |
 | ORM | Spring Data JPA (Hibernate) | |
 | マイグレーション | Flyway | スキーマのバージョン管理 |
 | API 仕様 | springdoc-openapi | Swagger UI（`/swagger-ui/index.html`）自動生成 |
-| ログ | Logback + logstash-logback-encoder | JSON 構造化ログ・MDC |
+| ログ | Logback + Spring Boot 構造化ログ（`logging.structured.format.console=logstash`） | 追加ライブラリなしで JSON 構造化ログ・MDC を出力 |
 | DB | PostgreSQL 16 (RDS) | |
 | 画像 | S3 + CloudFront | 署名付きURLで直接アップロード、CDN 配信 |
 | 実行基盤 | ECS Fargate（※仮） | コンテナ実行。EC2 のサーバー管理を不要にする |
@@ -265,7 +267,7 @@ sequenceDiagram
 
 ```mermaid
 flowchart LR
-    app["Spring Boot<br/>Logback + LogstashEncoder<br/>MDC: requestId, userId"] -->|stdout JSON| drv[ECS awslogs driver]
+    app["Spring Boot<br/>構造化ログ（Logstash 形式）<br/>MDC: requestId, userId"] -->|stdout JSON| drv[ECS awslogs driver]
     drv --> cwl[CloudWatch Logs<br/>保持期間 30日]
     cwl --> mf["メトリクスフィルタ<br/>level = ERROR"]
     mf --> alarm[CloudWatch Alarm<br/>5分間にERROR≥5件]
