@@ -104,7 +104,7 @@ Gradle は同梱の Gradle Wrapper（`./gradlew`）を使うため、インス�
 ### 起動手順
 
 ```bash
-# 1. PostgreSQL を起動
+# 1. PostgreSQL と S3Mock（写真の保存先。S3 のローカル代替）を起動
 docker compose up -d
 
 # 2. バックエンドを起動（http://localhost:8080）
@@ -124,6 +124,7 @@ npm run dev
 | http://localhost:5173 | 画面（Vite 開発サーバー。`/api` はバックエンドへプロキシ） |
 | http://localhost:8080/swagger-ui/index.html | API 仕様書（Swagger UI） |
 | http://localhost:8080/actuator/health | ヘルスチェック |
+| http://localhost:9090/tripdiary-photos/{s3Key} | アップロードした写真（S3Mock） |
 
 ### テスト・Lint
 

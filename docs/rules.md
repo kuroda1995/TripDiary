@@ -222,7 +222,7 @@ gitGraph
 - テストメソッド名は振る舞いが分かる名前にする（例: `他人のスポットを削除すると403を返す`、または `deleteSpot_returns403_whenNotOwner`）。
 - 1テスト1観点。Given / When / Then の構成で書く。
 - 結合テストは Testcontainers の PostgreSQL を使用し、H2 等の代替 DB は使わない（本番との差異を防ぐ）。
-- 外部サービス（S3）は LocalStack またはモックを使い、テストから実 AWS に接続しない。
+- 外部サービス（S3）は S3Mock（Testcontainers）またはモックを使い、テストから実 AWS に接続しない。
 - 不具合修正時は、先に不具合を再現する失敗テストを書いてから修正する。
 
 ---

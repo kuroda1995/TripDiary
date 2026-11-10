@@ -25,7 +25,7 @@
 | 静的解析 | 全コード | oxlint / Prettier / `tsc -b`（FE）、Spotless（BE） | ローカル・CI（毎回） |
 | 単体テスト（BE） | Service / Domain / Util / JWT 処理 | JUnit 5, Mockito, AssertJ | ローカル・CI（毎回） |
 | 単体テスト（FE） | コンポーネント / hooks / utils | Vitest, React Testing Library, MSW | ローカル・CI（毎回） |
-| 結合テスト（BE） | Controller〜Repository〜DB を通した API 単位 | `@SpringBootTest` + MockMvc, Testcontainers (PostgreSQL), LocalStack (S3) | ローカル・CI（毎回） |
+| 結合テスト（BE） | Controller〜Repository〜DB を通した API 単位 | `@SpringBootTest` + MockMvc, Testcontainers (PostgreSQL, S3Mock) | ローカル・CI（毎回） |
 | リポジトリテスト | JPA クエリ・制約 | `@DataJpaTest` + Testcontainers | ローカル・CI（毎回） |
 | E2E テスト | ブラウザ操作による主要ユーザーシナリオ | Playwright（Chromium） + Docker Compose | CI（毎回） |
 | 負荷テスト | 主要 API | k6 | **全機能完成時に1回のみ・手動** |
@@ -83,7 +83,7 @@ E2E は時間がかかり不安定になりやすいため、ハッピーパス�
 | 存在しない ID は 404 | | ✓ | |
 | 非公開投稿は本人以外に表示されない（一覧・詳細とも） | ✓ | ✓ | |
 | 削除時に写真・いいね・コメント・ステータスが連鎖削除される | | ✓ | |
-| 削除時に S3 削除処理が呼ばれる（S3Client をモック / LocalStack） | ✓ | ✓ | |
+| 削除時に S3 削除処理が呼ばれる（S3Client をモック / S3Mock） | ✓ | ✓ | |
 | 一覧のページング（カーソル）が重複・欠落なく動作する | | ✓ | |
 | 署名付きURL発行: 許可外 Content-Type・サイズ超過で 400 | ✓ | ✓ | |
 | 他ユーザーのプレフィックスの s3Key を指定すると 400/403 | ✓ | ✓ | |
@@ -154,8 +154,8 @@ E2E は時間がかかり不安定になりやすいため、ハッピーパス�
 | トリガー | `pull_request`、`push`（全ブランチ） |
 | ジョブ構成 | `lint` → `backend-test`（単体＋結合）／`frontend-test`（単体）→ `e2e` |
 | DB | Testcontainers（`postgres:16`）。GitHub Actions の Ubuntu ランナーは Docker 利用可 |
-| S3 | 結合テスト・E2E は LocalStack を使用（実 AWS には接続しない） |
-| E2E | `docker compose up` で API・DB・LocalStack を起動し、Vite のビルド成果物に対して Playwright を実行 |
+| S3 | 結合テスト・E2E は Adobe S3Mock を使用（実 AWS には接続しない。LocalStack は 2026.03 以降認証トークン必須のため不採用） |
+| E2E | `docker compose up` で DB・S3Mock を起動し、API と Vite のビルド成果物に対して Playwright を実行 |
 | 成果物 | JUnit/JaCoCo レポート、Playwright レポート（失敗時のスクリーンショット・トレース）をアップロード |
 | 失敗時 | PR のステータスチェックが失敗し、マージ不可（ブランチ保護） |
 | 高速化 | Gradle / npm キャッシュ、`concurrency` で同一ブランチの古い実行をキャンセル |

@@ -17,7 +17,7 @@ TripDiary の中心となる機能です。ユーザーは訪れた（または�
 | 項目 | 状況 |
 | --- | --- |
 | 作成・詳細・編集・削除・新着一覧・ユーザー別一覧・公開範囲（SPOT-01〜07） | 実装済み |
-| 写真（`photos`・カバー写真） | 写真アップロード機能（[03_photo_upload.md](03_photo_upload.md)）で追加 |
+| 写真（`photos`・カバー写真 `coverPhotoUrl`） | 実装済み（[03_photo_upload.md](03_photo_upload.md)） |
 | 「行ってみたい！」数・コメント数・`likedByMe`・`myStatus` | それぞれの機能（[04](04_like.md) / [05](05_comment.md) / [08](08_spot_status.md)）で追加 |
 | 一覧の検索条件・並び替え（`areaIds` / `q` / `sort`） | エリア検索機能（[07_area_search.md](07_area_search.md)）で追加 |
 
@@ -46,7 +46,8 @@ TripDiary の中心となる機能です。ユーザーは訪れた（または�
 - 削除時は確認ダイアログ（shadcn/ui の `AlertDialog`）を表示し、削除後は投稿者のページへ移動します。
 - エリアタグは5個選ぶと残りを選べなくし、選択中のタグはチップで表示して × で外せます。
 - ページを再読み込みした直後はログイン状態の復元を待ってから詳細・一覧を取得します（本人の非公開スポットが 404 にならないようにするため）。
-- 写真のアップロード中は投稿ボタンを無効化し、進捗を表示します（写真アップロード機能で追加）。
+- 写真のアップロード中は投稿ボタンを無効化し、進捗を表示します。アップロードに失敗した写真が残っている間も投稿できません（再試行または削除を促す）。
+- 一覧のカードにはカバー写真（先頭の写真）を表示します。詳細画面では写真を前後ボタン・サムネイルで切り替えられます。
 
 ## 4. API 仕様
 
@@ -78,7 +79,7 @@ TripDiary の中心となる機能です。ユーザーは訪れた（または�
 }
 ```
 
-`photos` は写真アップロード機能で追加します（未実装）。`impression` と `visitedOn` は省略または `null` にできます。
+`impression` と `visitedOn` は省略または `null` にできます。`photos` は省略または `null` で写真なしになります（`s3Key` は [署名付き URL 発行](03_photo_upload.md#51-署名付きurl発行-post-uploadspresigned-url認証必要) で受け取ったキー）。
 
 レスポンス `201 Created`（`Location: /api/v1/spots/1024`）: 詳細と同じ形式。
 
@@ -94,7 +95,7 @@ TripDiary の中心となる機能です。ユーザーは訪れた（または�
   "visitedOn": "2026-10-03",
   "visibility": "PUBLIC",
   "photos": [
-    { "id": 1, "url": "https://img.example.com/spots/42/9c1e....jpg", "sortOrder": 0 }
+    { "s3Key": "spots/42/9c1e....jpg", "url": "https://img.example.com/spots/42/9c1e....jpg", "sortOrder": 0 }
   ],
   "author": { "id": 42, "username": "taro_trip", "displayName": "旅するタロウ", "avatarUrl": null },
   "likeCount": 12,
@@ -107,7 +108,8 @@ TripDiary の中心となる機能です。ユーザーは訪れた（または�
 ```
 
 - `areaTags` は表示順（地方 → 都道府県、各階層の並び順）で返します。
-- `photos` / `likeCount` / `commentCount` / `likedByMe` / `myStatus` は各機能で追加します（未実装）。
+- `photos` は表示順（先頭がカバー写真）で返します。写真は全スポットで一意な `s3Key` で識別し、編集時はそのまま `photos[].s3Key` として送り返します（写真の ID は返しません）。
+- `likeCount` / `commentCount` / `likedByMe` / `myStatus` は各機能で追加します（未実装）。
 - `likedByMe` / `myStatus` は未ログイン時は `false` / `null` を返します。
 
 ### 4.3 一覧 `GET /spots`
@@ -125,6 +127,7 @@ TripDiary の中心となる機能です。ユーザーは訪れた（または�
       "impressionExcerpt": "開門直後に行くと人が少なくて最高でした。",
       "visitedOn": "2026-10-03",
       "visibility": "PUBLIC",
+      "coverPhotoUrl": "https://img.example.com/spots/42/9c1e....jpg",
       "author": { "id": 42, "username": "taro_trip", "displayName": "旅するタロウ", "avatarUrl": null },
       "createdAt": "2026-10-04T09:00:00Z"
     }
@@ -135,7 +138,8 @@ TripDiary の中心となる機能です。ユーザーは訪れた（または�
 
 - 一覧では感想の全文ではなく、先頭120文字（超える場合は末尾に「…」）を `impressionExcerpt` として返します。
 - `nextCursor` は「最後のスポットの投稿日時と ID」を Base64URL でエンコードした文字列です。クライアントは中身を解釈せず、そのまま次のリクエストに渡します。`null` の場合は最後のページです。
-- 一覧は SQL を件数に比例させずに取得します（投稿者は結合して1回、エリアタグは `hibernate.default_batch_fetch_size` でまとめて1回）。
+- `coverPhotoUrl` はカバー写真（先頭の写真）の URL です。写真がなければ `null`。
+- 一覧は SQL を件数に比例させずに取得します（投稿者は結合して1回、エリアタグ・写真は `hibernate.default_batch_fetch_size` でそれぞれまとめて1回）。
 
 ### 4.4 更新 `PUT /spots/{id}` / 削除 `DELETE /spots/{id}`
 
@@ -175,7 +179,9 @@ TripDiary の中心となる機能です。ユーザーは訪れた（または�
 | 400 | `DUPLICATE_AREA_TAG` | 同じエリアタグ ID が重複している |
 | 400 | `VISITED_ON_IN_FUTURE` | 訪問日が未来（日本時間の明日以降） |
 | 400 | `INVALID_CURSOR` | 一覧のカーソルの形式が不正 |
-| 400 | `INVALID_PHOTO_KEY` | 他ユーザーの写真キー・存在しない写真キー（写真アップロード機能で追加） |
+| 400 | `TOO_MANY_PHOTOS` | 写真が11枚以上 |
+| 400 | `DUPLICATE_PHOTO_ORDER` | 写真の `sortOrder` が重複している |
+| 400 | `INVALID_PHOTO_KEY` | 他ユーザーの写真キー・不正な形式のキー・S3 に存在しないキー・他の投稿で使用済みのキー・同じキーの重複 |
 | 401 | `UNAUTHORIZED` | 未ログインで作成・更新・削除 |
 | 403 | `FORBIDDEN` | 他人の公開投稿の編集・削除 |
 | 404 | `SPOT_NOT_FOUND` | 存在しない、または他人の非公開投稿 |
