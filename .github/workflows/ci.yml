@@ -1,0 +1,141 @@
+# CI: Lint / 単体テスト / 結合テスト / E2E テスト（docs/qa_test_plan.md 5.1）
+#
+# ※ 負荷テスト（k6）はここに追加しないこと。
+#    全機能完成時に1回だけ、workflow_dispatch 専用の perf.yml で手動実行する（docs/rules.md 7章）。
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: ['**']
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    name: Backend（Spotless・単体・結合・カバレッジ）
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@v5
+      # check = spotlessCheck + test（単体）+ integrationTest（Testcontainers）+ カバレッジ判定
+      - name: Gradle check
+        run: ./gradlew check --console=plain
+      - name: テストレポートを保存
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-reports
+          path: |
+            backend/build/reports/tests
+            backend/build/reports/jacoco
+          retention-days: 7
+
+  frontend:
+    name: Frontend（Prettier・oxlint・型チェック・単体テスト・ビルド）
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: npm run format:check
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm run test:coverage
+      - run: npm run build
+      - name: カバレッジレポートを保存
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-coverage
+          path: frontend/coverage
+          retention-days: 7
+
+  e2e:
+    name: E2E（Playwright）
+    needs: [backend, frontend]
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      db:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: tripdiary
+          POSTGRES_USER: tripdiary
+          POSTGRES_PASSWORD: tripdiary
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U tripdiary -d tripdiary"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: バックエンドをビルド
+        working-directory: backend
+        run: ./gradlew bootJar --console=plain
+      - name: バックエンドを起動
+        working-directory: backend
+        run: |
+          nohup java -jar build/libs/backend-0.0.1-SNAPSHOT.jar --spring.profiles.active=local > backend.log 2>&1 &
+          for i in $(seq 1 60); do
+            if curl -fsS http://localhost:8080/actuator/health | grep -q '"UP"'; then
+              echo "backend is up"; exit 0
+            fi
+            sleep 2
+          done
+          echo "backend did not start"; cat backend.log; exit 1
+
+      - name: フロントエンドの依存をインストール
+        working-directory: frontend
+        run: npm ci
+      - name: Playwright のブラウザをインストール
+        working-directory: frontend
+        run: npx playwright install --with-deps chromium
+      - name: E2E テスト
+        working-directory: frontend
+        run: npm run e2e
+
+      - name: E2E レポート・バックエンドログを保存
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-reports
+          path: |
+            frontend/playwright-report
+            frontend/test-results
+            backend/backend.log
+          retention-days: 7

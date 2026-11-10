@@ -1,0 +1,25 @@
+# ローカル開発用のミドルウェア
+#   起動: docker compose up -d
+#   停止: docker compose down（データも消す場合は -v）
+# S3 のローカル代替（LocalStack 等）は写真アップロード機能（feature/photo-upload）で追加する。
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: tripdiary-db
+    environment:
+      POSTGRES_DB: tripdiary
+      POSTGRES_USER: tripdiary
+      POSTGRES_PASSWORD: tripdiary
+      TZ: UTC
+    ports:
+      - "5432:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tripdiary -d tripdiary"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  db-data:

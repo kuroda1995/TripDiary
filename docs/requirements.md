@@ -279,7 +279,7 @@ TripDiary は、ユーザーが訪れた（または訪れたい）旅行スポ�
 | NFR-QA-01 | バックエンド: JUnit 5 + Mockito による単体テスト、Testcontainers（PostgreSQL）による結合テスト |
 | NFR-QA-02 | フロントエンド: Vitest + React Testing Library による単体テスト |
 | NFR-QA-03 | テストカバレッジ目標: BE Service 層 80% 以上、BE 全体・FE 70% 以上 |
-| NFR-QA-04 | Lint / Format: ESLint + Prettier（フロント）、Spotless or Checkstyle（バックエンド） |
+| NFR-QA-04 | Lint / Format: oxlint + Prettier（フロント）、Spotless（バックエンド） |
 | NFR-QA-05 | 機能実装ごとに単体・結合テストを作成し、オールグリーンを確認してから完了とする |
 | NFR-QA-06 | GitHub Actions で PR 作成時・push 時に単体・結合・E2E（Playwright）テストを自動実行する |
 | NFR-QA-07 | 負荷テスト（k6）は全機能完成時に1回のみ手動トリガーで実施し、日々の CI では実行しない |

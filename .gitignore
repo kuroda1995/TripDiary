@@ -1,0 +1,11 @@
+# OS / Editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# 環境変数（.env.example のみコミットする）
+.env
+.env.*
+!.env.example

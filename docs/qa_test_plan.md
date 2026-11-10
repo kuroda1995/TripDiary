@@ -22,7 +22,7 @@
 
 | レベル | 対象 | ツール | 実行タイミング |
 | --- | --- | --- | --- |
-| 静的解析 | 全コード | ESLint / Prettier / `tsc --noEmit`（FE）、Spotless / Checkstyle（BE） | ローカル・CI（毎回） |
+| 静的解析 | 全コード | oxlint / Prettier / `tsc -b`（FE）、Spotless（BE） | ローカル・CI（毎回） |
 | 単体テスト（BE） | Service / Domain / Util / JWT 処理 | JUnit 5, Mockito, AssertJ | ローカル・CI（毎回） |
 | 単体テスト（FE） | コンポーネント / hooks / utils | Vitest, React Testing Library, MSW | ローカル・CI（毎回） |
 | 結合テスト（BE） | Controller〜Repository〜DB を通した API 単位 | `@SpringBootTest` + MockMvc, Testcontainers (PostgreSQL), LocalStack (S3) | ローカル・CI（毎回） |

@@ -1,0 +1,8 @@
+dist
+coverage
+playwright-report
+test-results
+node_modules
+package-lock.json
+# shadcn/ui の生成コンポーネントは CLI の出力を保つ
+src/components/ui

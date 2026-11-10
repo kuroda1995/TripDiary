@@ -105,7 +105,7 @@ gitGraph
 
 | 項目 | ルール |
 | --- | --- |
-| フォーマット | Spotless（google-java-format）で自動整形 |
+| フォーマット | Spotless（google-java-format の AOSP スタイル＝インデント4）で自動整形。`./gradlew spotlessApply` |
 | パッケージ | 機能単位パッケージ（[architecture.md 3.2](./architecture.md#32-パッケージ構成機能単位パッケージ)） |
 | 命名 | クラス `UpperCamelCase`、メソッド/変数 `lowerCamelCase`、定数 `UPPER_SNAKE_CASE` |
 | DI | コンストラクタインジェクション（`@RequiredArgsConstructor` 可）。フィールドインジェクション禁止 |
@@ -121,7 +121,7 @@ gitGraph
 
 | 項目 | ルール |
 | --- | --- |
-| フォーマット | ESLint + Prettier。`tsconfig` は `strict: true` |
+| フォーマット | oxlint + Prettier（`npm run lint` / `npm run format`）。`tsconfig` は `strict: true`。`src/components/ui`（shadcn/ui の生成物）は対象外 |
 | 型 | `any` 禁止（やむを得ない場合は理由をコメント）。API 型は OpenAPI から生成した型を使う |
 | コンポーネント | 関数コンポーネント + hooks。ファイル名は `PascalCase.tsx` |
 | 構成 | 機能単位ディレクトリ（`src/features/<feature>`）。UI 部品は shadcn/ui をベースにする |
@@ -173,7 +173,7 @@ gitGraph
 ### 5.1 基本方針
 
 - Datadog などの有償 APM・外部ログサービスは使用しない。
-- Logback + `logstash-logback-encoder` を使用し、**本番（`prod` プロファイル）は JSON 形式で標準出力へ出力** する。ファイル出力はしない。
+- Logback と Spring Boot 標準の構造化ログ機能（`logging.structured.format.console=logstash`）を使用し、**本番（`prod` プロファイル）は JSON 形式で標準出力へ出力** する。MDC の値は自動で JSON に含まれる。ファイル出力はしない。
 - ローカル（`local` プロファイル）は可読性重視のテキスト形式とする。
 - ロガーは SLF4J（`@Slf4j` または `LoggerFactory.getLogger`）を使用し、`System.out.println` / `e.printStackTrace()` は禁止。
 - メッセージはプレースホルダ（`log.info("Spot created: spotId={}", id)`）を使い、文字列連結しない。

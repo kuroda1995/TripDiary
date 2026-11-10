@@ -3,7 +3,7 @@
 旅先の思い出を写真と感想で記録し、みんなと共有できる **旅行記録・SNSアプリ** です。
 自分だけの旅の記録帳として使いながら、他のユーザーの投稿から「次に行きたい場所」を見つけられます。
 
-> 🚧 現在は **設計フェーズ** です。要件定義・DB設計・各種規約のドキュメントを整備しており、アプリケーションコードはまだありません。
+> 🚧 現在は **開発初期** です。プロジェクトの土台（バックエンド・フロントエンド・DB・CI）を整備し、これから機能を順に実装していきます。
 
 ---
 
@@ -26,13 +26,14 @@
 
 | 分類 | 技術 |
 | --- | --- |
-| フロントエンド | React / TypeScript / Vite / Tailwind CSS / shadcn/ui / TanStack Query / React Hook Form + Zod |
-| バックエンド | Java 21 / Spring Boot 3 / Gradle / Spring Security（JWT）/ Spring Data JPA / Flyway |
+| フロントエンド | React 19 / TypeScript / Vite / Tailwind CSS v4 / shadcn/ui / React Router / TanStack Query / React Hook Form + Zod |
+| バックエンド | Java 21 / Spring Boot 4 / Gradle / Spring Security（JWT）/ Spring Data JPA / Flyway |
 | API 仕様 | springdoc-openapi（Swagger UI: `/swagger-ui/index.html`） |
 | データベース | PostgreSQL 16 |
 | インフラ | AWS（ALB / ECS Fargate※ / RDS / S3 / CloudFront / CloudWatch Logs / Secrets Manager） |
-| ログ | Logback + logstash-logback-encoder（JSON 構造化ログ・MDC） |
-| テスト | JUnit 5 / Mockito / Testcontainers / Vitest / React Testing Library / Playwright / k6 |
+| ログ | Logback + Spring Boot 構造化ログ（JSON・MDC） |
+| Lint / Format | Spotless（BE）/ oxlint + Prettier（FE） |
+| テスト | JUnit 5 / Mockito / Testcontainers / Vitest / React Testing Library / MSW / Playwright / k6 |
 | CI | GitHub Actions |
 
 ※ API の実行基盤は仮置きです。詳細は [アーキテクチャ設計書](docs/architecture.md) を参照してください。
@@ -70,34 +71,77 @@ flowchart LR
 
 ---
 
-## 📁 ディレクトリ構成（予定）
+## 📁 ディレクトリ構成
 
 ```
 TripDiary/
 ├── README.md
-├── docs/                 # 設計ドキュメント
-│   └── features/         # 機能別ドキュメント
-├── backend/              # Spring Boot（Gradle）
-├── frontend/             # React + Vite
-├── docker-compose.yml    # ローカル開発用（PostgreSQL / LocalStack）
-└── .github/workflows/    # CI（ci.yml）/ 負荷テスト（perf.yml, 手動のみ）
+├── docs/                    # 設計ドキュメント
+│   └── features/            # 機能別ドキュメント
+├── backend/                 # Spring Boot（Gradle）
+│   └── src/main/resources/db/migration/   # Flyway マイグレーション
+├── frontend/                # React + Vite
+│   ├── src/features/        # 機能単位のコード
+│   └── e2e/                 # Playwright の E2E テスト
+├── docker-compose.yml       # ローカル開発用（PostgreSQL）
+└── .github/workflows/ci.yml # CI（Lint・単体・結合・E2E）
 ```
 
 ---
 
-## 🚀 セットアップ（予定）
+## 🚀 セットアップ
 
-> 実装開始後に更新します。
+### 必要なもの
+
+| ツール | バージョン |
+| --- | --- |
+| Java（JDK） | 21 |
+| Node.js | 24 |
+| Docker（Docker Desktop） | 最新版（結合テストの Testcontainers でも使用） |
+
+Gradle は同梱の Gradle Wrapper（`./gradlew`）を使うため、インストール不要です。
+
+### 起動手順
 
 ```bash
-# 1. ローカル用のミドルウェアを起動（PostgreSQL / LocalStack）
+# 1. PostgreSQL を起動
 docker compose up -d
 
-# 2. バックエンド起動（http://localhost:8080, Swagger UI: /swagger-ui/index.html）
-cd backend && ./gradlew bootRun --args='--spring.profiles.active=local'
+# 2. バックエンドを起動（http://localhost:8080）
+cd backend
+./gradlew bootRun --args='--spring.profiles.active=local'
 
-# 3. フロントエンド起動（http://localhost:5173）
-cd frontend && npm install && npm run dev
+# 3. フロントエンドを起動（別のターミナルで / http://localhost:5173）
+cd frontend
+npm install
+npm run dev
+```
+
+画面右上に「API: 正常」と表示されれば、フロントエンド → バックエンド → DB までつながっています。
+
+| URL | 内容 |
+| --- | --- |
+| http://localhost:5173 | 画面（Vite 開発サーバー。`/api` はバックエンドへプロキシ） |
+| http://localhost:8080/swagger-ui/index.html | API 仕様書（Swagger UI） |
+| http://localhost:8080/actuator/health | ヘルスチェック |
+
+### テスト・Lint
+
+```bash
+# バックエンド（Spotless・単体・結合・カバレッジ判定をまとめて実行。Docker が必要）
+cd backend
+./gradlew check
+./gradlew spotlessApply      # フォーマットを自動修正
+./gradlew test               # 単体テストのみ
+./gradlew integrationTest    # 結合テストのみ（Testcontainers）
+
+# フロントエンド
+cd frontend
+npm run lint                 # oxlint
+npm run format               # Prettier で自動整形
+npm run typecheck            # 型チェック
+npm run test:coverage        # 単体テスト + カバレッジ
+npm run e2e                  # E2E（バックエンドと DB を起動しておくこと）
 ```
 
 ---

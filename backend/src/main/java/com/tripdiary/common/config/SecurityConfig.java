@@ -1,0 +1,79 @@
+package com.tripdiary.common.config;
+
+import java.util.List;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.Customizer;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.web.servlet.HandlerExceptionResolver;
+
+/**
+ * Spring Security の設定。
+ *
+ * <p>JWT によるステートレス認証を前提に、セッション・CSRF・フォームログインを無効化する。 認証 / 認可エラーは {@code GlobalExceptionHandler}
+ * に委譲し、共通エラーレスポンスで返す。 JWT 認証フィルタは feature/auth で追加する。
+ */
+@Configuration
+public class SecurityConfig {
+
+    /** 認証なしでアクセスできるパス（ヘルスチェック・API 仕様書）。 */
+    static final String[] PUBLIC_PATHS = {
+        "/actuator/health",
+        "/actuator/health/**",
+        "/v3/api-docs/**",
+        "/swagger-ui/**",
+        "/swagger-ui.html",
+        "/error"
+    };
+
+    @Bean
+    SecurityFilterChain securityFilterChain(
+            HttpSecurity http,
+            @Qualifier("handlerExceptionResolver") HandlerExceptionResolver resolver)
+            throws Exception {
+        http.csrf(AbstractHttpConfigurer::disable)
+                .cors(Customizer.withDefaults())
+                .formLogin(AbstractHttpConfigurer::disable)
+                .httpBasic(AbstractHttpConfigurer::disable)
+                .logout(AbstractHttpConfigurer::disable)
+                .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authorizeHttpRequests(
+                        auth ->
+                                auth.requestMatchers(PUBLIC_PATHS)
+                                        .permitAll()
+                                        .anyRequest()
+                                        .authenticated())
+                .exceptionHandling(
+                        e ->
+                                e.authenticationEntryPoint(
+                                                (request, response, ex) ->
+                                                        resolver.resolveException(
+                                                                request, response, null, ex))
+                                        .accessDeniedHandler(
+                                                (request, response, ex) ->
+                                                        resolver.resolveException(
+                                                                request, response, null, ex)));
+        return http.build();
+    }
+
+    @Bean
+    CorsConfigurationSource corsConfigurationSource(CorsProperties properties) {
+        CorsConfiguration config = new CorsConfiguration();
+        config.setAllowedOrigins(properties.allowedOrigins());
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
+        config.setAllowedHeaders(List.of("Authorization", "Content-Type", "X-Request-Id"));
+        config.setExposedHeaders(List.of("X-Request-Id", "Location"));
+        config.setAllowCredentials(true);
+        config.setMaxAge(3600L);
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/api/**", config);
+        return source;
+    }
+}

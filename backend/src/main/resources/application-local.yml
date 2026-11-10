@@ -1,0 +1,5 @@
+# ローカル開発用（docker compose の PostgreSQL に接続）
+# 起動: ./gradlew bootRun --args='--spring.profiles.active=local'
+logging:
+  level:
+    com.tripdiary: DEBUG
