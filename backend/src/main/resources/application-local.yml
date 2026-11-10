@@ -1,5 +1,14 @@
-# ローカル開発用（docker compose の PostgreSQL に接続）
+# ローカル開発用（docker compose の PostgreSQL に接続）。CI の E2E テストでも使用する。
 # 起動: ./gradlew bootRun --args='--spring.profiles.active=local'
+app:
+  cors:
+    # 5173: Vite 開発サーバー / 4173: vite preview（E2E テスト）
+    # ブラウザは同一オリジン宛ての POST にも Origin ヘッダを付け、Vite のプロキシはそれをそのまま転送するため許可が必要
+    allowed-origins: http://localhost:5173,http://localhost:4173
+  jwt:
+    # http://localhost で Cookie を使えるよう Secure 属性を外す（本番では必ず true）
+    refresh-cookie-secure: false
+
 logging:
   level:
     com.tripdiary: DEBUG
