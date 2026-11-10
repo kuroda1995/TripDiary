@@ -1,14 +1,19 @@
 package com.tripdiary.common.config;
 
+import com.tripdiary.auth.AccessTokenService;
+import com.tripdiary.auth.JwtAuthenticationFilter;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -17,8 +22,8 @@ import org.springframework.web.servlet.HandlerExceptionResolver;
 /**
  * Spring Security の設定。
  *
- * <p>JWT によるステートレス認証を前提に、セッション・CSRF・フォームログインを無効化する。 認証 / 認可エラーは {@code GlobalExceptionHandler}
- * に委譲し、共通エラーレスポンスで返す。 JWT 認証フィルタは feature/auth で追加する。
+ * <p>JWT によるステートレス認証のため、セッション・CSRF・フォームログインを無効化する。 （リフレッシュトークン Cookie は SameSite=Strict で CSRF
+ * を防ぐ。） 認証 / 認可エラーは {@code GlobalExceptionHandler} に委譲し、共通エラーレスポンスで返す。
  */
 @Configuration
 public class SecurityConfig {
@@ -33,11 +38,20 @@ public class SecurityConfig {
         "/error"
     };
 
+    /** 認証なしで呼べる認証 API。 */
+    static final String[] PUBLIC_AUTH_PATHS = {
+        "/api/v1/auth/signup", "/api/v1/auth/login", "/api/v1/auth/refresh", "/api/v1/auth/logout"
+    };
+
     @Bean
     SecurityFilterChain securityFilterChain(
             HttpSecurity http,
-            @Qualifier("handlerExceptionResolver") HandlerExceptionResolver resolver)
+            @Qualifier("handlerExceptionResolver") HandlerExceptionResolver resolver,
+            AccessTokenService accessTokenService)
             throws Exception {
+        AuthenticationEntryPoint entryPoint =
+                (request, response, ex) -> resolver.resolveException(request, response, null, ex);
+
         http.csrf(AbstractHttpConfigurer::disable)
                 .cors(Customizer.withDefaults())
                 .formLogin(AbstractHttpConfigurer::disable)
@@ -48,14 +62,16 @@ public class SecurityConfig {
                         auth ->
                                 auth.requestMatchers(PUBLIC_PATHS)
                                         .permitAll()
+                                        .requestMatchers(HttpMethod.POST, PUBLIC_AUTH_PATHS)
+                                        .permitAll()
                                         .anyRequest()
                                         .authenticated())
+                .addFilterBefore(
+                        new JwtAuthenticationFilter(accessTokenService, entryPoint),
+                        UsernamePasswordAuthenticationFilter.class)
                 .exceptionHandling(
                         e ->
-                                e.authenticationEntryPoint(
-                                                (request, response, ex) ->
-                                                        resolver.resolveException(
-                                                                request, response, null, ex))
+                                e.authenticationEntryPoint(entryPoint)
                                         .accessDeniedHandler(
                                                 (request, response, ex) ->
                                                         resolver.resolveException(

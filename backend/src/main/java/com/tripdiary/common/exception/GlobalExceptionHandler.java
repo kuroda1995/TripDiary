@@ -1,7 +1,9 @@
 package com.tripdiary.common.exception;
 
+import com.tripdiary.auth.TokenAuthenticationException;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -88,11 +90,30 @@ public class GlobalExceptionHandler {
                 .body(ErrorResponse.of("METHOD_NOT_ALLOWED", "許可されていないHTTPメソッドです"));
     }
 
-    /** Spring Security の認証エラー（{@code SecurityConfig} のエントリポイントから委譲される）。 */
+    /**
+     * Spring Security の認証エラー（{@code SecurityConfig} のエントリポイントから委譲される）。
+     *
+     * <p>トークンの期限切れ・不正は個別のコード（TOKEN_EXPIRED / INVALID_TOKEN）、 トークン無しは UNAUTHORIZED を返す。
+     */
     @ExceptionHandler(AuthenticationException.class)
     public ResponseEntity<ErrorResponse> handleAuthentication(AuthenticationException e) {
+        if (e instanceof TokenAuthenticationException tokenError) {
+            log.info("Token rejected code={}", tokenError.getCode());
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(ErrorResponse.of(tokenError.getCode(), tokenError.getMessage()));
+        }
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                 .body(ErrorResponse.of("UNAUTHORIZED", "ログインが必要です"));
+    }
+
+    /** 一意制約違反など（同時登録の競合等。通常は Service 層の事前チェックで 409 を返す）。 */
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ErrorResponse> handleDataIntegrity(DataIntegrityViolationException e) {
+        log.warn(
+                "Data integrity violation: {}",
+                e.getMostSpecificCause().getClass().getSimpleName());
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(ErrorResponse.of("DATA_CONFLICT", "データが競合しました。もう一度お試しください"));
     }
 
     /** Spring Security の認可エラー（{@code SecurityConfig} のハンドラから委譲される）。 */

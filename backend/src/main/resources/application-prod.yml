@@ -1,6 +1,7 @@
 # 本番用（docs/architecture.md 5章 / docs/rules.md 5章）
 # - ログは JSON（Logstash 形式）で標準出力へ。MDC（requestId / userId）は自動で出力される
 # - Swagger UI / API 仕様 JSON は公開しない
+# - JWT の署名鍵は環境変数 JWT_SECRET（Secrets Manager から注入）が必須。未設定なら起動に失敗する
 logging:
   structured:
     format:
@@ -18,3 +19,12 @@ springdoc:
     enabled: false
   swagger-ui:
     enabled: false
+
+server:
+  # ALB の X-Forwarded-For / X-Forwarded-Proto を信頼し、クライアント IP（ログイン試行制限）を正しく取得する
+  forward-headers-strategy: native
+
+app:
+  jwt:
+    secret: ${JWT_SECRET}
+    refresh-cookie-secure: true

@@ -17,6 +17,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 
 /**
@@ -26,6 +27,8 @@ import org.springframework.test.web.servlet.MockMvc;
  */
 @IntegrationTest
 @ActiveProfiles("prod")
+// 本番プロファイルは JWT_SECRET 環境変数が必須のため、テスト用の値を渡す
+@TestPropertySource(properties = "JWT_SECRET=dGVzdC1vbmx5LXNlY3JldC1mb3ItcHJvZC1wcm9maWxlLXRlc3Q=")
 class StructuredLoggingIntegrationTest {
 
     @Autowired MockMvc mockMvc;
