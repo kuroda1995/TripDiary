@@ -215,7 +215,8 @@ sequenceDiagram
     B->>A: POST /auth/login {email, password}
     A->>D: users 検索 / BCrypt 照合
     A->>D: refresh_tokens に hash を保存
-    A-->>B: accessToken(15分) + refreshToken(14日)
+    A-->>B: 本文: accessToken(15分) / Set-Cookie: refresh_token(14日, HttpOnly)
+    Note over B: accessToken はメモリにのみ保持
 
     B->>A: GET /spots (Authorization: Bearer access)
     A-->>B: 200 OK
@@ -223,13 +224,17 @@ sequenceDiagram
     Note over B,A: アクセストークン期限切れ
     B->>A: GET /spots (期限切れ access)
     A-->>B: 401 TOKEN_EXPIRED
-    B->>A: POST /auth/refresh {refreshToken}
+    B->>A: POST /auth/refresh（Cookie を自動送信）
     A->>D: hash 照合 → 旧トークン revoke → 新トークン保存（ローテーション）
-    A-->>B: 新 accessToken + 新 refreshToken
+    A-->>B: 新 accessToken / Set-Cookie: 新 refresh_token
     B->>A: GET /spots（リトライ）
+
+    Note over B,A: ページ再読み込み（メモリの accessToken は消える）
+    B->>A: POST /auth/refresh（Cookie を自動送信）
+    A-->>B: 新 accessToken + ユーザー情報（ログイン状態を復元）
 ```
 
-> リフレッシュトークンの保存先（HttpOnly Cookie か メモリ + localStorage か）は実装フェーズで決定する。セキュリティ上は HttpOnly + Secure + SameSite Cookie を推奨。
+> トークンの保存場所と Cookie の属性は [01_auth.md「トークンの保存場所の方針」](./features/01_auth.md#トークンの保存場所の方針) を参照。
 
 ### 4.2 写真アップロードフロー
 
