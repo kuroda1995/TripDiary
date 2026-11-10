@@ -35,17 +35,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [queryClient],
   )
 
-  const login = useCallback(async (input: LoginInput) => {
-    const user = await authApi.login(input)
-    setState({ status: 'authenticated', user })
-    return user
-  }, [])
+  // ログイン後は見える範囲（本人の非公開スポットなど）が変わるため、取得済みのデータを古い扱いにする
+  const login = useCallback(
+    async (input: LoginInput) => {
+      const user = await authApi.login(input)
+      setState({ status: 'authenticated', user })
+      void queryClient.invalidateQueries()
+      return user
+    },
+    [queryClient],
+  )
 
-  const signup = useCallback(async (input: SignupInput) => {
-    const user = await authApi.signup(input)
-    setState({ status: 'authenticated', user })
-    return user
-  }, [])
+  const signup = useCallback(
+    async (input: SignupInput) => {
+      const user = await authApi.signup(input)
+      setState({ status: 'authenticated', user })
+      void queryClient.invalidateQueries()
+      return user
+    },
+    [queryClient],
+  )
 
   const logout = useCallback(async () => {
     try {

@@ -38,6 +38,9 @@ export function AuthMenu() {
 
   return (
     <nav aria-label="アカウント" className="flex items-center gap-2">
+      <Link to="/spots/new" className={buttonVariants({ size: 'sm' })}>
+        投稿する
+      </Link>
       <Link to="/me" className={buttonVariants({ variant: 'ghost', size: 'sm' })}>
         {auth.user.displayName}
       </Link>
