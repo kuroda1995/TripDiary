@@ -10,9 +10,15 @@ import java.time.ZoneOffset;
 public class MutableClock extends Clock {
 
     private Instant now;
+    private final ZoneId zone;
 
     public MutableClock(Instant now) {
+        this(now, ZoneOffset.UTC);
+    }
+
+    private MutableClock(Instant now, ZoneId zone) {
         this.now = now;
+        this.zone = zone;
     }
 
     public static MutableClock at(String isoInstant) {
@@ -30,11 +36,12 @@ public class MutableClock extends Clock {
 
     @Override
     public ZoneId getZone() {
-        return ZoneOffset.UTC;
+        return zone;
     }
 
+    /** 同じ時刻でタイムゾーンだけ異なる Clock を返す（以降の advance は共有しない）。 */
     @Override
     public Clock withZone(ZoneId zone) {
-        return this;
+        return new MutableClock(now, zone);
     }
 }

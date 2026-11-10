@@ -18,7 +18,9 @@ class SchemaConstraintsIntegrationTest {
 
     @BeforeEach
     void cleanUp() {
-        jdbc.execute("TRUNCATE users, area_tags RESTART IDENTITY CASCADE");
+        // area_tags は初期データ（V2）を他のテストでも使うため、このテストで追加した行だけを消す
+        jdbc.execute("TRUNCATE users RESTART IDENTITY CASCADE");
+        jdbc.execute("DELETE FROM area_tags WHERE slug LIKE 'test-%'");
     }
 
     private long insertUser(String email, String username) {
@@ -140,12 +142,13 @@ class SchemaConstraintsIntegrationTest {
     @Test
     @DisplayName("最上位のエリアタグ同士でも同じ名前は登録できない（NULLS NOT DISTINCT）")
     void areaTagNameUniqueAtTopLevel() {
-        jdbc.update("INSERT INTO area_tags (name, slug, level) VALUES ('関西', 'kansai', 1)");
+        jdbc.update("INSERT INTO area_tags (name, slug, level) VALUES ('テスト地方', 'test-region', 1)");
 
         assertThatThrownBy(
                         () ->
                                 jdbc.update(
-                                        "INSERT INTO area_tags (name, slug, level) VALUES ('関西', 'kansai-2', 1)"))
+                                        "INSERT INTO area_tags (name, slug, level)"
+                                                + " VALUES ('テスト地方', 'test-region-2', 1)"))
                 .isInstanceOf(DataIntegrityViolationException.class);
     }
 }

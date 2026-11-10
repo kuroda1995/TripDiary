@@ -43,6 +43,15 @@ public class SecurityConfig {
         "/api/v1/auth/signup", "/api/v1/auth/login", "/api/v1/auth/refresh", "/api/v1/auth/logout"
     };
 
+    /**
+     * 未ログインでも閲覧できる API（GET のみ）。
+     *
+     * <p>トークンが付いていれば認証済みとして扱う（本人の非公開スポットの閲覧などに使う）。
+     */
+    static final String[] PUBLIC_READ_PATHS = {
+        "/api/v1/spots", "/api/v1/spots/*", "/api/v1/areas", "/api/v1/users/*/spots"
+    };
+
     @Bean
     SecurityFilterChain securityFilterChain(
             HttpSecurity http,
@@ -63,6 +72,8 @@ public class SecurityConfig {
                                 auth.requestMatchers(PUBLIC_PATHS)
                                         .permitAll()
                                         .requestMatchers(HttpMethod.POST, PUBLIC_AUTH_PATHS)
+                                        .permitAll()
+                                        .requestMatchers(HttpMethod.GET, PUBLIC_READ_PATHS)
                                         .permitAll()
                                         .anyRequest()
                                         .authenticated())
