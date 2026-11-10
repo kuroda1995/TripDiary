@@ -257,6 +257,8 @@ gitGraph
 | [architecture.md](./architecture.md) | スキル図・アーキテクチャ図 |
 | [qa_test_plan.md](./qa_test_plan.md) | 品質チェック・テスト計画 |
 | [rules.md](./rules.md) | 本規約 |
+| [features/](./features/README.md) | 機能別ドキュメント（ユースケース・画面・API・業務ルール・エラー・テスト観点） |
+| [../README.md](../README.md) | プロジェクト概要・技術スタック・ドキュメント索引 |
 
 - 図は Mermaid 記法で記述し、画像ファイルは極力使わない（差分管理のため）。
 - API 仕様は Swagger（自動生成）を正とし、Markdown に二重管理しない。
