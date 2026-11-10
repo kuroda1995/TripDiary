@@ -9,6 +9,12 @@ export type Author = {
   avatarUrl: string | null
 }
 
+export type SpotPhoto = {
+  s3Key: string
+  url: string
+  sortOrder: number
+}
+
 /** スポット詳細（GET /api/v1/spots/{id}）。 */
 export type Spot = {
   id: number
@@ -18,6 +24,8 @@ export type Spot = {
   impression: string | null
   visitedOn: string | null
   visibility: Visibility
+  /** 表示順（先頭がカバー写真） */
+  photos: SpotPhoto[]
   author: Author
   createdAt: string
   updatedAt: string
@@ -32,6 +40,7 @@ export type SpotSummary = {
   impressionExcerpt: string | null
   visitedOn: string | null
   visibility: Visibility
+  coverPhotoUrl: string | null
   author: Author
   createdAt: string
 }
@@ -49,4 +58,5 @@ export type SpotInput = {
   impression: string | null
   visitedOn: string | null
   visibility: Visibility
+  photos: { s3Key: string; sortOrder: number }[]
 }

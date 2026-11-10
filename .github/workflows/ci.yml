@@ -91,6 +91,13 @@ jobs:
           --health-interval 5s
           --health-timeout 3s
           --health-retries 10
+      # S3 のローカル代替（docker-compose.yml と同じ。ブラウザから直接 PUT する）
+      s3:
+        image: adobe/s3mock:5.2.3
+        env:
+          COM_ADOBE_TESTING_S3MOCK_STORE_INITIAL_BUCKETS: tripdiary-photos
+        ports:
+          - 9090:9090
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-java@v5

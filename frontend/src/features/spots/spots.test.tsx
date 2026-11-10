@@ -211,6 +211,7 @@ describe('スポット投稿', () => {
       impression: 'ちゃんぽんが絶品',
       visitedOn: null,
       visibility: 'PRIVATE',
+      photos: [],
     })
   })
 

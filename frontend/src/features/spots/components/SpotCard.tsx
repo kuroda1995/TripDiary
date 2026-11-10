@@ -5,10 +5,19 @@ import { formatDate } from '@/lib/date'
 import type { SpotSummary } from '../types'
 import { AreaTagBadges } from './AreaTagBadges'
 
-/** 一覧のスポットカード。カバー写真は写真アップロード機能で追加する。 */
+/** 一覧のスポットカード。 */
 export function SpotCard({ spot }: { spot: SpotSummary }) {
   return (
     <Card className="h-full">
+      {spot.coverPhotoUrl && (
+        // タイトルが見出しリンクになっているため、カバー写真は装飾扱い（読み上げの重複を避ける）
+        <img
+          src={spot.coverPhotoUrl}
+          alt=""
+          loading="lazy"
+          className="aspect-video w-full bg-muted object-cover"
+        />
+      )}
       <CardHeader>
         <CardTitle>
           <h2 className="text-base font-semibold">
