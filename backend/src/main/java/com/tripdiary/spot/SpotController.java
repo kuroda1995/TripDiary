@@ -38,6 +38,10 @@ public class SpotController {
     static final int DEFAULT_LIMIT = 20;
     static final int MAX_LIMIT = 50;
 
+    private static final String SPOT_INPUT_ERRORS =
+            "VALIDATION_ERROR / AREA_TAG_NOT_FOUND / DUPLICATE_AREA_TAG / VISITED_ON_IN_FUTURE"
+                    + " / TOO_MANY_PHOTOS / DUPLICATE_PHOTO_ORDER / INVALID_PHOTO_KEY";
+
     private final SpotService spotService;
 
     @Operation(summary = "新着一覧", description = "公開スポットを新着順に返す（カーソルページング）。")
@@ -87,8 +91,7 @@ public class SpotController {
     @ApiResponse(responseCode = "201", description = "作成成功（Location ヘッダに URL）")
     @ApiResponse(
             responseCode = "400",
-            description =
-                    "VALIDATION_ERROR / AREA_TAG_NOT_FOUND / DUPLICATE_AREA_TAG / VISITED_ON_IN_FUTURE",
+            description = SPOT_INPUT_ERRORS,
             content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     @PostMapping("/api/v1/spots")
     public ResponseEntity<SpotResponse> create(
@@ -98,8 +101,12 @@ public class SpotController {
         return ResponseEntity.created(URI.create("/api/v1/spots/" + created.id())).body(created);
     }
 
-    @Operation(summary = "スポット更新", description = "投稿者本人のみ。全項目を置き換える。")
+    @Operation(summary = "スポット更新", description = "投稿者本人のみ。全項目を置き換える（含まれない写真は削除）。")
     @SecurityRequirement(name = OpenApiConfig.BEARER_AUTH)
+    @ApiResponse(
+            responseCode = "400",
+            description = SPOT_INPUT_ERRORS,
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     @ApiResponse(
             responseCode = "403",
             description = "FORBIDDEN（他人のスポット）",

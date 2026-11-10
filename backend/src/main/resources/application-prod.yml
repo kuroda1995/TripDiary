@@ -2,6 +2,7 @@
 # - ログは JSON（Logstash 形式）で標準出力へ。MDC（requestId / userId）は自動で出力される
 # - Swagger UI / API 仕様 JSON は公開しない
 # - JWT の署名鍵は環境変数 JWT_SECRET（Secrets Manager から注入）が必須。未設定なら起動に失敗する
+# - 写真のバケット名 S3_BUCKET と配信ドメイン PHOTO_BASE_URL（CloudFront）も必須
 logging:
   structured:
     format:
@@ -28,3 +29,11 @@ app:
   jwt:
     secret: ${JWT_SECRET}
     refresh-cookie-secure: true
+  # AWS の S3 に ECS タスクロールの認証情報で接続する（endpoint を空にする）。
+  # 画像は CloudFront（OAC）経由で配信するため、PHOTO_BASE_URL には CloudFront のドメインを指定する
+  storage:
+    bucket: ${S3_BUCKET}
+    endpoint: ""
+    access-key: ""
+    secret-key: ""
+    public-base-url: ${PHOTO_BASE_URL}

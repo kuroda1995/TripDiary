@@ -59,9 +59,15 @@ describe('フォーム値とリクエストの変換', () => {
       impression: null,
       visitedOn: null,
       visibility: 'PRIVATE',
+      photos: [
+        { s3Key: 'spots/1/b.jpg', url: 'https://img.test/b.jpg', sortOrder: 1 },
+        { s3Key: 'spots/1/a.jpg', url: 'https://img.test/a.jpg', sortOrder: 0 },
+      ],
     } as unknown as Spot
 
-    expect(toFormValues(spot)).toEqual({
+    const values = toFormValues(spot)
+
+    expect(values).toMatchObject({
       title: 't',
       locationName: 'l',
       areaTagIds: [11],
@@ -69,5 +75,49 @@ describe('フォーム値とリクエストの変換', () => {
       visitedOn: '',
       visibility: 'PRIVATE',
     })
+    // 写真は表示順に並べ、アップロード済みとして扱う
+    expect(values.photos.map((p) => [p.s3Key, p.previewUrl, p.status])).toEqual([
+      ['spots/1/a.jpg', 'https://img.test/a.jpg', 'done'],
+      ['spots/1/b.jpg', 'https://img.test/b.jpg', 'done'],
+    ])
+  })
+
+  it('写真は画面の並び順を sortOrder にし、アップロードが終わったものだけ送る', () => {
+    const photo = (s3Key: string | null) => ({
+      id: s3Key ?? 'x',
+      status: 'done' as const,
+      progress: 100,
+      s3Key,
+      previewUrl: null,
+      error: null,
+      retryFile: null,
+    })
+
+    expect(toSpotInput({ ...valid, photos: [photo('k2'), photo(null), photo('k1')] }).photos).toEqual([
+      { s3Key: 'k2', sortOrder: 0 },
+      { s3Key: 'k1', sortOrder: 1 },
+    ])
+  })
+})
+
+describe('写真の入力チェック', () => {
+  const item = (status: 'preparing' | 'uploading' | 'done' | 'error') => ({
+    id: status,
+    status,
+    progress: 0,
+    s3Key: null,
+    previewUrl: null,
+    error: null,
+    retryFile: null,
+  })
+
+  it('アップロード中・失敗した写真があると送信できない', () => {
+    expect(spotSchema.safeParse({ ...valid, photos: [item('done')] }).success).toBe(true)
+    expect(spotSchema.safeParse({ ...valid, photos: [item('uploading')] }).error?.issues[0].message).toBe(
+      '写真のアップロードが終わるまでお待ちください',
+    )
+    expect(spotSchema.safeParse({ ...valid, photos: [item('error')] }).error?.issues[0].message).toBe(
+      'アップロードできなかった写真があります。再試行するか削除してください',
+    )
   })
 })

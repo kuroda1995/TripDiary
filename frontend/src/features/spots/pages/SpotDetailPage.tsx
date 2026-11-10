@@ -7,6 +7,7 @@ import { formatDate, formatDateTime } from '@/lib/date'
 import { useSpot } from '../api'
 import { AreaTagBadges } from '../components/AreaTagBadges'
 import { DeleteSpotButton } from '../components/DeleteSpotButton'
+import { PhotoGallery } from '../components/PhotoGallery'
 import { SpotNotFound } from '../components/SpotNotFound'
 import { useSpotIdParam } from '../useSpotIdParam'
 
@@ -65,6 +66,8 @@ function SpotDetail({ spotId }: { spotId: number }) {
         </p>
         <AreaTagBadges tags={spot.areaTags} />
       </header>
+
+      <PhotoGallery photos={spot.photos} title={spot.title} />
 
       {spot.impression ? (
         <p className="leading-relaxed whitespace-pre-wrap">{spot.impression}</p>

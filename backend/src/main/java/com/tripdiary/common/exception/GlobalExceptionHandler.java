@@ -32,7 +32,12 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(ApiException.class)
     public ResponseEntity<ErrorResponse> handleApiException(ApiException e) {
-        log.info("API error status={} code={}", e.getStatus().value(), e.getCode());
+        if (e.getStatus().is5xxServerError()) {
+            // 外部サービス（S3 等）の障害。原因を調査できるよう例外ごと ERROR で残す
+            log.error("API error status={} code={}", e.getStatus().value(), e.getCode(), e);
+        } else {
+            log.info("API error status={} code={}", e.getStatus().value(), e.getCode());
+        }
         return ResponseEntity.status(e.getStatus())
                 .body(ErrorResponse.of(e.getCode(), e.getMessage()));
     }

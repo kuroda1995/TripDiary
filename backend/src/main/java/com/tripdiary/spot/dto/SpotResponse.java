@@ -2,6 +2,7 @@ package com.tripdiary.spot.dto;
 
 import com.tripdiary.area.dto.AreaTagSummary;
 import com.tripdiary.spot.Spot;
+import com.tripdiary.spot.SpotPhoto;
 import com.tripdiary.spot.Visibility;
 import com.tripdiary.user.dto.UserResponse;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -9,6 +10,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.util.Comparator;
 import java.util.List;
+import java.util.function.UnaryOperator;
 
 /** スポット詳細。 */
 @Schema(description = "スポット詳細")
@@ -20,11 +22,15 @@ public record SpotResponse(
         @Schema(nullable = true) String impression,
         @Schema(nullable = true, example = "2026-10-03") LocalDate visitedOn,
         Visibility visibility,
+        @Schema(description = "写真（表示順。先頭がカバー写真）") List<SpotPhotoResponse> photos,
         UserResponse author,
         Instant createdAt,
         Instant updatedAt) {
 
-    public static SpotResponse from(Spot spot) {
+    /**
+     * @param photoUrl S3 キーから配信 URL を作る関数
+     */
+    public static SpotResponse from(Spot spot, UnaryOperator<String> photoUrl) {
         return new SpotResponse(
                 spot.getId(),
                 spot.getTitle(),
@@ -33,6 +39,10 @@ public record SpotResponse(
                 spot.getImpression(),
                 spot.getVisitedOn(),
                 spot.getVisibility(),
+                spot.getPhotos().stream()
+                        .sorted(Comparator.comparingInt(SpotPhoto::getSortOrder))
+                        .map(photo -> SpotPhotoResponse.from(photo, photoUrl))
+                        .toList(),
                 UserResponse.from(spot.getUser()),
                 spot.getCreatedAt(),
                 spot.getUpdatedAt());

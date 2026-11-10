@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { applyServerErrors } from '@/features/auth/applyServerErrors'
+import { PhotoUploader } from '@/features/photos/components/PhotoUploader'
 import { todayInJapan } from '@/lib/date'
 import {
   MAX_AREA_TAGS,
@@ -18,7 +19,15 @@ import {
 import type { SpotInput } from '../types'
 import { AreaTagPicker } from './AreaTagPicker'
 
-const FIELDS = ['title', 'locationName', 'areaTagIds', 'impression', 'visitedOn', 'visibility'] as const
+const FIELDS = [
+  'title',
+  'locationName',
+  'areaTagIds',
+  'impression',
+  'visitedOn',
+  'visibility',
+  'photos',
+] as const
 
 type SpotFormProps = {
   defaultValues: SpotFormValues
@@ -38,6 +47,9 @@ export function SpotForm({ defaultValues, submitLabel, onSubmit }: SpotFormProps
   } = useForm<SpotFormValues>({ resolver: zodResolver(spotSchema), defaultValues })
 
   const impressionLength = useWatch({ control, name: 'impression' }).length
+  const isUploading = useWatch({ control, name: 'photos' }).some(
+    (photo) => photo.status === 'preparing' || photo.status === 'uploading',
+  )
 
   const submit = handleSubmit(async (values) => {
     try {
@@ -47,6 +59,9 @@ export function SpotForm({ defaultValues, submitLabel, onSubmit }: SpotFormProps
         AREA_TAG_NOT_FOUND: 'areaTagIds',
         DUPLICATE_AREA_TAG: 'areaTagIds',
         VISITED_ON_IN_FUTURE: 'visitedOn',
+        TOO_MANY_PHOTOS: 'photos',
+        DUPLICATE_PHOTO_ORDER: 'photos',
+        INVALID_PHOTO_KEY: 'photos',
       })
     }
   })
@@ -103,6 +118,13 @@ export function SpotForm({ defaultValues, submitLabel, onSubmit }: SpotFormProps
         </p>
         {errors.impression && <p className="text-xs text-destructive">{errors.impression.message}</p>}
       </div>
+      <Controller
+        control={control}
+        name="photos"
+        render={({ field, fieldState }) => (
+          <PhotoUploader value={field.value} onChange={field.onChange} error={fieldState.error?.message} />
+        )}
+      />
       <fieldset className="space-y-2">
         <legend className="text-sm font-medium">公開範囲</legend>
         <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm">
@@ -126,8 +148,8 @@ export function SpotForm({ defaultValues, submitLabel, onSubmit }: SpotFormProps
           </label>
         </div>
       </fieldset>
-      <Button type="submit" disabled={isSubmitting}>
-        {isSubmitting ? '保存中…' : submitLabel}
+      <Button type="submit" disabled={isSubmitting || isUploading}>
+        {isSubmitting ? '保存中…' : isUploading ? '写真をアップロード中…' : submitLabel}
       </Button>
     </form>
   )

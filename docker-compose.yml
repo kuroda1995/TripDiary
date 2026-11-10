@@ -1,7 +1,10 @@
 # ローカル開発用のミドルウェア
 #   起動: docker compose up -d
 #   停止: docker compose down（データも消す場合は -v）
-# S3 のローカル代替（LocalStack 等）は写真アップロード機能（feature/photo-upload）で追加する。
+#
+# S3 のローカル代替には Adobe S3Mock を使う（Apache-2.0。LocalStack は 2026.03 以降、認証トークンが必須になったため）。
+#   バケット tripdiary-photos を起動時に作成する。ブラウザからの PUT に必要な CORS はすべてのオリジンを許可する。
+#   写真は http://localhost:9090/tripdiary-photos/{s3Key} で配信される（バックエンドの既定値と同じ）。
 services:
   db:
     image: postgres:16-alpine
@@ -21,5 +24,19 @@ services:
       timeout: 3s
       retries: 10
 
+  s3:
+    image: adobe/s3mock:5.2.3
+    container_name: tripdiary-s3
+    environment:
+      COM_ADOBE_TESTING_S3MOCK_STORE_INITIAL_BUCKETS: tripdiary-photos
+      # 再起動してもアップロードした写真を残す
+      COM_ADOBE_TESTING_S3MOCK_STORE_RETAIN_FILES_ON_EXIT: "true"
+      COM_ADOBE_TESTING_S3MOCK_STORE_ROOT: /s3mockroot
+    ports:
+      - "9090:9090"
+    volumes:
+      - s3-data:/s3mockroot
+
 volumes:
   db-data:
+  s3-data:
