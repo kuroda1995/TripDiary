@@ -217,15 +217,17 @@ erDiagram
 - `uq_area_tags_parent_name` : `UNIQUE (parent_id, name)`
 - `idx_area_tags_parent_id` : `(parent_id)`
 
-初期データ例（Flyway の `V2__seed_area_tags.sql` で投入）:
+初期データ（Flyway の `V2__seed_area_tags.sql` で投入。全体は [07_area_search.md](./features/07_area_search.md#エリアタグの階層初期データ) を参照）の例:
 
-| id | parent_id | name | slug | level |
-| --- | --- | --- | --- | --- |
-| 1 | NULL | 関西 | kansai | 1 |
-| 2 | 1 | 京都 | kyoto | 2 |
-| 3 | 1 | 大阪 | osaka | 2 |
-| 10 | NULL | 海外 | overseas | 1 |
-| 11 | 10 | 台湾 | taiwan | 2 |
+| parent | name | slug | level |
+| --- | --- | --- | --- |
+| （なし） | 関西 | kansai | 1 |
+| 関西 | 京都 | kyoto | 2 |
+| 関西 | 大阪 | osaka | 2 |
+| （なし） | 海外 | overseas | 1 |
+| 海外 | 台湾 | taiwan | 2 |
+
+> ID は自動採番のため環境によって異なる。アプリやテストでは `slug` でタグを特定する。
 
 > 親タグ指定時の子タグ展開（SRCH-03）は再帰 CTE（`WITH RECURSIVE`）で取得するか、件数が少ないためアプリ側でキャッシュして展開する。
 
