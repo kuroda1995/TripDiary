@@ -2,6 +2,7 @@ package com.tripdiary.spot.dto;
 
 import com.tripdiary.area.dto.AreaTagSummary;
 import com.tripdiary.spot.Spot;
+import com.tripdiary.spot.SpotReactions;
 import com.tripdiary.spot.Visibility;
 import com.tripdiary.user.dto.UserResponse;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -23,6 +24,8 @@ public record SpotSummaryResponse(
         @Schema(description = "カバー写真（先頭の写真）の URL。写真がなければ null", nullable = true)
                 String coverPhotoUrl,
         UserResponse author,
+        @Schema(description = "行ってみたい！の件数", example = "12") long likeCount,
+        @Schema(description = "閲覧者が行ってみたい！を付けているか（未ログインは false）") boolean likedByMe,
         Instant createdAt) {
 
     static final int EXCERPT_LENGTH = 120;
@@ -30,7 +33,8 @@ public record SpotSummaryResponse(
     /**
      * @param photoUrl S3 キーから配信 URL を作る関数
      */
-    public static SpotSummaryResponse from(Spot spot, UnaryOperator<String> photoUrl) {
+    public static SpotSummaryResponse from(
+            Spot spot, UnaryOperator<String> photoUrl, SpotReactions reactions) {
         return new SpotSummaryResponse(
                 spot.getId(),
                 spot.getTitle(),
@@ -41,6 +45,8 @@ public record SpotSummaryResponse(
                 spot.getVisibility(),
                 spot.coverPhoto().map(photo -> photoUrl.apply(photo.getS3Key())).orElse(null),
                 UserResponse.from(spot.getUser(), photoUrl),
+                reactions.likeCount(),
+                reactions.likedByMe(),
                 spot.getCreatedAt());
     }
 

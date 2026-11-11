@@ -20,6 +20,10 @@ public interface SpotRepository extends JpaRepository<Spot, Long> {
     @EntityGraph(attributePaths = {"user", "areaTags"})
     Optional<Spot> findWithDetailsById(Long id);
 
+    /** 指定した ID のスポット（順不同。投稿者は fetch join、エリアタグ・写真はまとめて取得）。 */
+    @Query("select s from Spot s join fetch s.user where s.id in :ids")
+    List<Spot> findAllWithUserByIdIn(@Param("ids") java.util.Collection<Long> ids);
+
     @Query(
             "select s from Spot s join fetch s.user"
                     + " where s.visibility = com.tripdiary.spot.Visibility.PUBLIC"

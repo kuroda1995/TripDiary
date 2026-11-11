@@ -24,6 +24,7 @@ import java.time.ZoneId;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -57,6 +58,7 @@ public class SpotService {
     private final AreaTagService areaTagService;
     private final PhotoStorage photoStorage;
     private final ApplicationEventPublisher eventPublisher;
+    private final SpotReactionReader reactionReader;
     private final Clock clock;
 
     @Transactional
@@ -71,7 +73,7 @@ public class SpotService {
         spot.replacePhotos(photos);
         spot = spotRepository.save(spot);
         log.info("Spot created spotId={} photos={}", spot.getId(), photos.size());
-        return toResponse(spot);
+        return toResponse(spot, SpotReactions.NONE);
     }
 
     /**
@@ -81,7 +83,8 @@ public class SpotService {
      */
     @Transactional(readOnly = true)
     public SpotResponse get(long spotId, Long viewerId) {
-        return toResponse(findVisible(spotId, viewerId));
+        Spot spot = findVisible(spotId, viewerId);
+        return toResponse(spot, reactionsOf(spot, viewerId));
     }
 
     @Transactional
@@ -97,7 +100,7 @@ public class SpotService {
                 spotId,
                 photos.size(),
                 removed.size());
-        return toResponse(spot);
+        return toResponse(spot, reactionsOf(spot, userId));
     }
 
     @Transactional
@@ -111,9 +114,13 @@ public class SpotService {
         log.info("Spot deleted spotId={} photos={}", spotId, photoKeys.size());
     }
 
-    /** 新着一覧（公開スポットのみ）。 */
+    /**
+     * 新着一覧（公開スポットのみ）。
+     *
+     * @param viewerId 閲覧者（未ログインなら null。行ってみたい！を付けたかの判定に使う）
+     */
     @Transactional(readOnly = true)
-    public SpotPageResponse listPublic(String cursor, int limit) {
+    public SpotPageResponse listPublic(Long viewerId, String cursor, int limit) {
         PageRequest page = PageRequest.of(0, limit + 1);
         List<Spot> spots =
                 cursor == null
@@ -121,7 +128,7 @@ public class SpotService {
                         : withCursor(
                                 cursor,
                                 c -> spotRepository.findPublicAfter(c.createdAt(), c.id(), page));
-        return toPage(spots, limit);
+        return toPage(spots, limit, viewerId);
     }
 
     /** ユーザー別一覧。本人が見る場合は非公開スポットも含める。 */
@@ -145,7 +152,7 @@ public class SpotService {
                                                 c.createdAt(),
                                                 c.id(),
                                                 page));
-        return toPage(spots, limit);
+        return toPage(spots, limit, viewerId);
     }
 
     private static List<Spot> withCursor(
@@ -154,20 +161,43 @@ public class SpotService {
     }
 
     /** limit + 1 件取得し、超えた分があれば次ページありとしてカーソルを返す。 */
-    private SpotPageResponse toPage(List<Spot> spots, int limit) {
+    private SpotPageResponse toPage(List<Spot> spots, int limit, Long viewerId) {
         boolean hasNext = spots.size() > limit;
         List<Spot> pageItems = hasNext ? spots.subList(0, limit) : spots;
         String nextCursor =
                 hasNext ? SpotCursor.of(pageItems.get(pageItems.size() - 1)).encode() : null;
-        return new SpotPageResponse(
-                pageItems.stream()
-                        .map(spot -> SpotSummaryResponse.from(spot, photoStorage::publicUrl))
-                        .toList(),
-                nextCursor);
+        return new SpotPageResponse(toSummaries(pageItems, viewerId), nextCursor);
     }
 
-    private SpotResponse toResponse(Spot spot) {
-        return SpotResponse.from(spot, photoStorage::publicUrl);
+    /**
+     * 一覧用の形に変換する。行ってみたい！の件数などは、件数に比例しない回数（1回）でまとめて取得する。
+     *
+     * <p>他の一覧（行ってみたい！した投稿など）からも使う。
+     */
+    public List<SpotSummaryResponse> toSummaries(List<Spot> spots, Long viewerId) {
+        if (spots.isEmpty()) {
+            return List.of();
+        }
+        Map<Long, SpotReactions> reactions =
+                reactionReader.read(spots.stream().map(Spot::getId).toList(), viewerId);
+        return spots.stream()
+                .map(
+                        spot ->
+                                SpotSummaryResponse.from(
+                                        spot,
+                                        photoStorage::publicUrl,
+                                        reactions.getOrDefault(spot.getId(), SpotReactions.NONE)))
+                .toList();
+    }
+
+    private SpotReactions reactionsOf(Spot spot, Long viewerId) {
+        return reactionReader
+                .read(List.of(spot.getId()), viewerId)
+                .getOrDefault(spot.getId(), SpotReactions.NONE);
+    }
+
+    private SpotResponse toResponse(Spot spot, SpotReactions reactions) {
+        return SpotResponse.from(spot, photoStorage::publicUrl, reactions);
     }
 
     /**
@@ -227,6 +257,16 @@ public class SpotService {
 
     private static BadRequestException invalidPhotoKey() {
         return new BadRequestException(INVALID_PHOTO_KEY, "写真を確認できませんでした。もう一度アップロードしてください");
+    }
+
+    /**
+     * 閲覧できるスポット（他人の非公開スポット・存在しないスポットは SPOT_NOT_FOUND）。
+     *
+     * <p>行ってみたい！など、スポットに対する操作の前提チェックに使う。
+     */
+    @Transactional(readOnly = true)
+    public Spot getVisible(long spotId, Long viewerId) {
+        return findVisible(spotId, viewerId);
     }
 
     private Spot findVisible(long spotId, Long viewerId) {
