@@ -12,6 +12,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * @param accessTokenTtl アクセストークンの有効期間（15分）
  * @param refreshTokenTtl リフレッシュトークンの有効期間（14日）
  * @param refreshCookieSecure リフレッシュトークン Cookie に Secure 属性を付けるか（HTTPS 以外のローカル開発のみ false）
+ * @param refreshReuseGrace ローテーションで使用済みになったリフレッシュトークンの再利用を許す猶予期間（既定30秒。0 で猶予なし）
  */
 @ConfigurationProperties(prefix = "app.jwt")
 public record JwtProperties(
@@ -19,11 +20,19 @@ public record JwtProperties(
         String issuer,
         Duration accessTokenTtl,
         Duration refreshTokenTtl,
-        boolean refreshCookieSecure) {
+        boolean refreshCookieSecure,
+        Duration refreshReuseGrace) {
 
     static final int MIN_SECRET_BYTES = 32;
+    static final Duration DEFAULT_REFRESH_REUSE_GRACE = Duration.ofSeconds(30);
 
     public JwtProperties {
+        if (refreshReuseGrace == null) {
+            refreshReuseGrace = DEFAULT_REFRESH_REUSE_GRACE;
+        }
+        if (refreshReuseGrace.isNegative()) {
+            throw new IllegalArgumentException("app.jwt.refresh-reuse-grace は 0 以上にしてください");
+        }
         if (secret == null || secret.isBlank()) {
             throw new IllegalArgumentException("app.jwt.secret を設定してください");
         }
@@ -61,6 +70,8 @@ public record JwtProperties(
                 + accessTokenTtl
                 + ", refreshTokenTtl="
                 + refreshTokenTtl
+                + ", refreshReuseGrace="
+                + refreshReuseGrace
                 + "}";
     }
 }

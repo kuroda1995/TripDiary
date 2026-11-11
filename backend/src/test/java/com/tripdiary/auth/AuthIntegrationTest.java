@@ -386,10 +386,30 @@ class AuthIntegrationTest {
         }
 
         @Test
-        @DisplayName("使用済みのリフレッシュトークンを再利用すると 401 になり、新しいトークンも含めて全て失効する（盗用対策）")
+        @DisplayName("使用済みになった直後（猶予期間内）の再利用は成功し、どちらの新しいトークンも使える（応答前の画面遷移・複数タブ対策）")
+        void reuseWithinGraceSucceeds() throws Exception {
+            Cookie original = refreshCookie(signup("taro@example.com", "taro_trip"));
+            // 1回目の更新の応答（新しい Cookie）を受け取れなかった想定
+            Cookie lost = refreshCookie(refresh(original));
+
+            MvcResult retried = refresh(original);
+
+            assertThat(retried.getResponse().getStatus()).isEqualTo(200);
+            Cookie retriedCookie = refreshCookie(retried);
+            assertThat(retriedCookie.getValue()).isNotIn(original.getValue(), lost.getValue());
+            assertThat(refresh(retriedCookie).getResponse().getStatus()).isEqualTo(200);
+            assertThat(refresh(lost).getResponse().getStatus()).isEqualTo(200);
+        }
+
+        @Test
+        @DisplayName("猶予期間を過ぎてから使用済みのリフレッシュトークンを再利用すると 401 になり、新しいトークンも含めて全て失効する（盗用対策）")
         void reuseRevokesAll() throws Exception {
             Cookie original = refreshCookie(signup("taro@example.com", "taro_trip"));
             Cookie rotated = refreshCookie(refresh(original));
+            // 猶予期間（30秒）を過ぎた状態にする
+            jdbc.update(
+                    "UPDATE refresh_tokens SET rotated_at = rotated_at - interval '31 seconds'"
+                            + " WHERE rotated_at IS NOT NULL");
 
             MvcResult reused = refresh(original);
             assertThat(reused.getResponse().getStatus()).isEqualTo(401);
@@ -432,6 +452,19 @@ class AuthIntegrationTest {
             assertThat(result.getResponse().getHeader(HttpHeaders.SET_COOKIE))
                     .contains("Max-Age=0");
             assertThat(refresh(cookie).getResponse().getStatus()).isEqualTo(401);
+        }
+
+        @Test
+        @DisplayName("更新の直後にログアウトすると、猶予期間中の古いトークンでもログインし直せない")
+        void logoutRevokesTokensInGrace() throws Exception {
+            Cookie original = refreshCookie(signup("taro@example.com", "taro_trip"));
+            Cookie current = refreshCookie(refresh(original));
+
+            mockMvc.perform(post("/api/v1/auth/logout").cookie(current))
+                    .andExpect(status().isNoContent());
+
+            assertThat(refresh(original).getResponse().getStatus()).isEqualTo(401);
+            assertThat(refresh(current).getResponse().getStatus()).isEqualTo(401);
         }
 
         @Test

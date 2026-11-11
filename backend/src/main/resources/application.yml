@@ -48,6 +48,9 @@ app:
     access-token-ttl: 15m
     refresh-token-ttl: 14d
     refresh-cookie-secure: ${JWT_REFRESH_COOKIE_SECURE:true}
+    # ローテーションで使用済みになったリフレッシュトークンの再利用を許す猶予期間
+    # （更新の応答前の画面遷移・複数タブでの同時更新でログアウトされないようにする。docs/features/01_auth.md 5章）
+    refresh-reuse-grace: 30s
   auth:
     login-rate-limit:
       max-attempts: 10

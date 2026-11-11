@@ -154,7 +154,8 @@ erDiagram
 | `user_id` | `BIGINT` | NN, FK → `users.id` ON DELETE CASCADE | | 所有ユーザー |
 | `token_hash` | `VARCHAR(64)` | NN, UQ | | トークンの SHA-256 ハッシュ（16進） |
 | `expires_at` | `TIMESTAMPTZ` | NN | | 有効期限 |
-| `revoked_at` | `TIMESTAMPTZ` | | `NULL` | 失効日時（ログアウト・ローテーション時に設定） |
+| `revoked_at` | `TIMESTAMPTZ` | | `NULL` | 失効日時（ログアウト・パスワード変更・再利用検知時に設定）。失効後は使えない |
+| `rotated_at` | `TIMESTAMPTZ` | | `NULL` | ローテーションで使用済みにした日時（V4 で追加）。ここから猶予期間の間だけ再利用を許す（[01_auth.md](features/01_auth.md) 5章） |
 | `created_at` | `TIMESTAMPTZ` | NN | `now()` | 発行日時 |
 
 インデックス:
@@ -365,6 +366,7 @@ CREATE TABLE refresh_tokens (
     token_hash  VARCHAR(64) NOT NULL,
     expires_at  TIMESTAMPTZ NOT NULL,
     revoked_at  TIMESTAMPTZ,
+    rotated_at  TIMESTAMPTZ,  -- V4__refresh_token_rotated_at.sql で追加
     created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
     CONSTRAINT uq_refresh_tokens_token_hash UNIQUE (token_hash)
 );

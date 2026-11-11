@@ -31,7 +31,8 @@ class RefreshTokenServiceTest {
                     "tripdiary-api",
                     Duration.ofMinutes(15),
                     Duration.ofDays(14),
-                    true);
+                    true,
+                    Duration.ofSeconds(30));
     private final RefreshTokenService service = new RefreshTokenService(repository, props, clock);
     private final User user = TestUsers.user(7L, "alice");
 
@@ -67,14 +68,77 @@ class RefreshTokenServiceTest {
     }
 
     @Test
-    @DisplayName("有効なトークンでローテーションすると、そのトークンは失効しユーザーが返る")
-    void rotateRevokesUsedToken() {
+    @DisplayName("有効なトークンでローテーションすると、そのトークンは使用済み（失効とは区別）になりユーザーが返る")
+    void rotateMarksTokenRotated() {
         RefreshToken token = stored("raw-1", clock.instant().plus(Duration.ofDays(1)));
 
         User result = service.rotate("raw-1");
 
         assertThat(result).isSameAs(user);
-        assertThat(token.isRevoked()).isTrue();
+        assertThat(token.isRotated()).isTrue();
+        assertThat(token.getRotatedAt()).isEqualTo(clock.instant());
+        assertThat(token.isRevoked()).isFalse();
+    }
+
+    @Test
+    @DisplayName("使用済みになってから猶予期間（30秒）内の再利用は許し、全トークン失効もしない")
+    void reuseWithinGraceIsAllowed() {
+        RefreshToken token = stored("raw-1", clock.instant().plus(Duration.ofDays(1)));
+        service.rotate("raw-1");
+
+        clock.advance(Duration.ofSeconds(29));
+        assertThat(service.rotate("raw-1")).isSameAs(user);
+        assertThat(service.rotate("raw-1")).isSameAs(user);
+
+        verify(repository, never()).revokeAllByUserId(anyLong(), any());
+        // 猶予期間の起点は最初に使用済みになった時刻のまま（再利用のたびに延びない）
+        assertThat(token.getRotatedAt()).isEqualTo(clock.instant().minusSeconds(29));
+    }
+
+    @Test
+    @DisplayName("猶予期間を過ぎてからの再利用は盗用とみなし、全トークンを失効させる")
+    void reuseAfterGraceIsDetected() {
+        stored("raw-1", clock.instant().plus(Duration.ofDays(1)));
+        service.rotate("raw-1");
+
+        clock.advance(Duration.ofSeconds(30));
+
+        assertInvalid("raw-1");
+        verify(repository).revokeAllByUserId(7L, clock.instant());
+    }
+
+    @Test
+    @DisplayName("ログアウトなどで失効したトークンは、猶予期間内でも再利用を許さず全トークンを失効させる")
+    void revokedTokenHasNoGrace() {
+        RefreshToken token = stored("raw-1", clock.instant().plus(Duration.ofDays(1)));
+        service.rotate("raw-1");
+        token.revoke(clock.instant());
+
+        clock.advance(Duration.ofSeconds(1));
+
+        assertInvalid("raw-1");
+        verify(repository).revokeAllByUserId(7L, clock.instant());
+    }
+
+    @Test
+    @DisplayName("猶予期間を 0 にすると、使用済みトークンの再利用はすぐに盗用とみなす")
+    void zeroGrace() {
+        RefreshTokenService strict =
+                new RefreshTokenService(
+                        repository,
+                        new JwtProperties(
+                                props.secret(),
+                                props.issuer(),
+                                props.accessTokenTtl(),
+                                props.refreshTokenTtl(),
+                                true,
+                                Duration.ZERO),
+                        clock);
+        stored("raw-1", clock.instant().plus(Duration.ofDays(1)));
+        strict.rotate("raw-1");
+
+        assertThatThrownBy(() -> strict.rotate("raw-1")).isInstanceOf(UnauthorizedException.class);
+        verify(repository).revokeAllByUserId(7L, clock.instant());
     }
 
     @Test
@@ -127,6 +191,9 @@ class RefreshTokenServiceTest {
         service.revoke(null);
 
         assertThat(token.isRevoked()).isTrue();
+        // 猶予期間中の使用済みトークンもあわせて失効させる
+        verify(repository)
+                .revokeRecentlyRotated(7L, clock.instant().minusSeconds(30), clock.instant());
     }
 
     @Test

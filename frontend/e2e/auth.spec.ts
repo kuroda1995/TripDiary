@@ -82,4 +82,39 @@ test.describe('ユーザー認証', () => {
     await expect(other.getByText('このメールアドレスは登録済みです')).toBeVisible()
     await other.close()
   })
+
+  test('リロード直後のトークン更新の応答を受け取る前に画面を移っても、ログアウトされない', async ({
+    page,
+    playwright,
+  }) => {
+    const user = uniqueUser()
+    await signup(page, user)
+    await expect(page.getByRole('link', { name: user.displayName })).toBeVisible()
+
+    // 次のリロードでのトークン更新は、サーバーまでは届くが応答（新しい Cookie）をブラウザが受け取れない状態にする
+    // （応答の前に画面を移ってブラウザが通信を打ち切った場合と同じ）。
+    // route.fetch() は応答の Cookie をブラウザにも保存してしまうため、Cookie を共有しない別の通信で送る
+    const isolated = await playwright.request.newContext()
+    let lost = false
+    await page.route('**/api/v1/auth/refresh', async (route) => {
+      if (lost) return route.continue()
+      lost = true
+      const response = await isolated.post(route.request().url(), {
+        headers: { cookie: (await route.request().allHeaders()).cookie ?? '' },
+      })
+      expect(response.status()).toBe(200)
+      await route.abort()
+    })
+    await page.reload()
+    await expect.poll(() => lost).toBe(true)
+
+    // 次の画面では、使用済みになった古いリフレッシュトークンで更新することになる
+    await page.goto('/me')
+    await expect(page.getByRole('heading', { name: 'マイページ' })).toBeVisible()
+    await expect(page.getByText(user.email)).toBeVisible()
+
+    // その後も通常どおり使える（新しいトークンに入れ替わっている）
+    await page.reload()
+    await expect(page.getByText(user.email)).toBeVisible()
+  })
 })
