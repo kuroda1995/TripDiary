@@ -241,6 +241,10 @@ gitGraph
 - 認可チェック（リソース所有者の確認）は Service 層で必ず行い、フロントエンドの表示制御だけに頼らない。
 - 入力値は Bean Validation でサーバー側検証する。SQL は JPA / プリペアドステートメントのみ（文字列連結で SQL を組み立てない）。
 - 依存ライブラリは Dependabot で更新を監視し、High 以上の脆弱性は速やかに対応する。
+- フロントエンドの `npm audit` は、ブラウザに配信される本番用の依存（`npm audit --omit=dev`）を0件に保つ。ビルド時・開発時にしか使わない道具は `devDependencies` に置く。
+  - `shadcn` はビルド時に `shadcn/tailwind.css` を取り込むのと、部品を追加する CLI にしか使わないため `devDependencies`。
+  - CLI が使う ts-morph の minimatch は、修正版（11 系）が ts-morph の指定範囲外のため `package.json` の `overrides` で固定している（`npx shadcn add <部品> --dry-run` で CLI が動くことを確認済み）。ts-morph が 11 系に対応したら `overrides` を外す。
+  - 既知の残件: `deepmerge`（low、shadcn CLI の依存）。修正には shadcn を 1.0 系に戻す必要があり、開発時の CLI でしか使われず配信物にも含まれないため対応しない。
 - 秘密情報は AWS Secrets Manager / GitHub Actions Secrets で管理する。
 
 ---
