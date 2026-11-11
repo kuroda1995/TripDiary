@@ -304,7 +304,7 @@ erDiagram
 - `ck_user_spot_statuses_visited_at` : `CHECK (status = 'VISITED' OR visited_at IS NULL)`
 - `idx_user_spot_statuses_user_status` : `(user_id, status, updated_at DESC)` — マイリスト表示用
 
-> ステータス設定は `INSERT ... ON CONFLICT (user_id, spot_id) DO UPDATE` による UPSERT で行う。
+> ステータス設定は `INSERT ... ON CONFLICT (user_id, spot_id) DO UPDATE ... WHERE user_spot_statuses.status <> EXCLUDED.status` による UPSERT で行う（同じ値での再設定では `visited_at` / `updated_at` を変えない）。
 
 ---
 
@@ -544,10 +544,10 @@ WHERE s.id = ANY(:spotIds);
 | `spots` | `Spot` | `@OneToMany(mappedBy = "spot", cascade = ALL, orphanRemoval = true) @OrderBy("sortOrder") List<SpotPhoto> photos`、`@ManyToMany` + `@JoinTable(name = "spot_area_tags") Set<AreaTag> areaTags` |
 | `spot_photos` | `SpotPhoto` | |
 | `area_tags` | `AreaTag` | `@ManyToOne(fetch = LAZY) AreaTag parent` |
-| `spot_likes` | `SpotLike` | `@EmbeddedId SpotLikeId(userId, spotId)` |
+| `spot_likes` | （なし） | 主キーだけのテーブルのため、エンティティにせず `LikeRepository`（`NamedParameterJdbcTemplate`）で SQL を直接扱う |
 | `comments` | `Comment` | |
 | `follows` | （なし） | 主キーだけのテーブルのため、エンティティにせず `FollowRepository`（`NamedParameterJdbcTemplate`）で SQL を直接扱う |
-| `user_spot_statuses` | `UserSpotStatus` | `@EmbeddedId`、`@Enumerated(EnumType.STRING) SpotStatus status`（`VISITED`, `WANT_TO_GO`） |
+| `user_spot_statuses` | （なし） | UPSERT（`ON CONFLICT DO UPDATE ... WHERE`）を使うため、エンティティにせず `SpotStatusRepository`（`NamedParameterJdbcTemplate`）で SQL を直接扱う。ステータスは enum `spot.SpotStatus`（`VISITED`, `WANT_TO_GO`） |
 
 - 全関連は `FetchType.LAZY` を基本とし、一覧取得時は `@EntityGraph` または DTO プロジェクションで必要な分だけ取得する。
 - `spring.jpa.open-in-view=false` を設定し、遅延ロードをサービス層内に閉じ込める。
