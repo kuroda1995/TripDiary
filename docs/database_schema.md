@@ -282,9 +282,11 @@ erDiagram
 | `created_at` | `TIMESTAMPTZ` | NN | `now()` | フォロー日時 |
 
 制約・インデックス:
-- 主キー: `(follower_id, followee_id)` — 重複フォロー防止。フォロー中一覧はこの主キーで検索
+- 主キー: `(follower_id, followee_id)` — 重複フォロー防止（`INSERT ... ON CONFLICT DO NOTHING` で冪等にフォロー）
 - `ck_follows_not_self` : `CHECK (follower_id <> followee_id)` — 自分自身のフォロー禁止
-- `idx_follows_followee_id` : `(followee_id, follower_id)` — フォロワー一覧用
+- `idx_follows_follower_id_created_at` : `(follower_id, created_at DESC, followee_id DESC)` — フォロー中一覧（フォローした日時の新しい順）・フォロー数・タイムライン用
+- `idx_follows_followee_id_created_at` : `(followee_id, created_at DESC, follower_id DESC)` — フォロワー一覧（同上）・フォロワー数用
+- V1 の `idx_follows_followee_id`（`(followee_id, follower_id)`）は V3 で上記に置き換えて削除した
 
 ### 3.10 `user_spot_statuses`（ユーザー別スポットステータス）
 
@@ -460,7 +462,9 @@ CREATE TABLE follows (
     PRIMARY KEY (follower_id, followee_id),
     CONSTRAINT ck_follows_not_self CHECK (follower_id <> followee_id)
 );
-CREATE INDEX idx_follows_followee_id ON follows (followee_id, follower_id);
+-- V3__follows_list_indexes.sql で一覧用に置き換え（V1 の idx_follows_followee_id は削除）
+CREATE INDEX idx_follows_follower_id_created_at ON follows (follower_id, created_at DESC, followee_id DESC);
+CREATE INDEX idx_follows_followee_id_created_at ON follows (followee_id, created_at DESC, follower_id DESC);
 
 -- 10. user_spot_statuses
 CREATE TABLE user_spot_statuses (
@@ -542,7 +546,7 @@ WHERE s.id = ANY(:spotIds);
 | `area_tags` | `AreaTag` | `@ManyToOne(fetch = LAZY) AreaTag parent` |
 | `spot_likes` | `SpotLike` | `@EmbeddedId SpotLikeId(userId, spotId)` |
 | `comments` | `Comment` | |
-| `follows` | `Follow` | `@EmbeddedId FollowId(followerId, followeeId)` |
+| `follows` | （なし） | 主キーだけのテーブルのため、エンティティにせず `FollowRepository`（`NamedParameterJdbcTemplate`）で SQL を直接扱う |
 | `user_spot_statuses` | `UserSpotStatus` | `@EmbeddedId`、`@Enumerated(EnumType.STRING) SpotStatus status`（`VISITED`, `WANT_TO_GO`） |
 
 - 全関連は `FetchType.LAZY` を基本とし、一覧取得時は `@EntityGraph` または DTO プロジェクションで必要な分だけ取得する。
