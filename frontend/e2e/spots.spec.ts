@@ -58,7 +58,8 @@ test.describe('スポット投稿', () => {
     await page.getByRole('link', { name: title }).click()
     await page.getByRole('button', { name: '削除' }).click()
     await page.getByRole('alertdialog').getByRole('button', { name: '削除する' }).click()
-    await expect(page.getByRole('heading', { name: /の投稿$/ })).toBeVisible()
+    // 投稿者（本人）のプロフィールへ移動する
+    await expect(page.getByRole('link', { name: 'プロフィール編集' })).toBeVisible()
     await expect(page.getByRole('link', { name: title })).toHaveCount(0)
   })
 

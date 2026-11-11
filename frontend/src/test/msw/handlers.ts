@@ -131,6 +131,22 @@ export function uploadHandlers(onPut: (key: string, contentType: string | null) 
   ]
 }
 
+/** プロフィール（GET /api/v1/users/{username}）。 */
+export function profileFixture(overrides: Record<string, unknown> = {}) {
+  return {
+    id: otherUser.id,
+    username: otherUser.username,
+    displayName: otherUser.displayName,
+    bio: null,
+    avatarUrl: null,
+    spotCount: 0,
+    followingCount: 0,
+    followerCount: 0,
+    followedByMe: false,
+    ...overrides,
+  }
+}
+
 /** 既定の振る舞い: API は正常、ログインしていない（リフレッシュトークンなし）、スポットは0件。 */
 export const defaultHandlers = [
   http.get('/actuator/health', () => HttpResponse.json({ status: 'UP' })),
@@ -138,6 +154,18 @@ export const defaultHandlers = [
   http.get('/api/v1/spots', () => HttpResponse.json({ items: [], nextCursor: null })),
   http.get('/api/v1/me/likes', () => HttpResponse.json({ items: [], nextCursor: null })),
   http.get('/api/v1/spots/:id/comments', () => HttpResponse.json({ items: [], nextCursor: null })),
+  http.get('/api/v1/users/:username/spots', () => HttpResponse.json({ items: [], nextCursor: null })),
+  http.get('/api/v1/users/:username', ({ params }) => {
+    // /users/me（本人の情報）は各テストで定義する
+    if (params.username === 'me') return
+    const isMe = params.username === meFixture.username
+    return HttpResponse.json(
+      profileFixture({
+        username: params.username,
+        ...(isMe && { id: meFixture.id, displayName: meFixture.displayName }),
+      }),
+    )
+  }),
   http.post('/api/v1/auth/refresh', () =>
     HttpResponse.json(errorResponse('INVALID_REFRESH_TOKEN', 'ログインの有効期限が切れました'), {
       status: 401,

@@ -201,7 +201,7 @@ Cache-Control: no-store
 
 ## 9. 補足・将来検討
 
-- 他のユーザーのプロフィール（自己紹介など）を見る画面・API は、フォロー機能（[06_follow.md](06_follow.md)）で追加します。
+- 他のユーザーのプロフィール（自己紹介など）を見る画面・API（`GET /users/{username}`）は、フォロー機能（[06_follow.md](06_follow.md)）で追加しました。
 - PATCH の「送らない」と「null」を区別するため、`ProfileUpdateRequest` は record ではなく setter で受けるクラスにしています（record のコンストラクタだと、送らなかった項目も `Optional.empty()` になるため）。
 - パスワードリセット（メール送信）は将来対応（AUTH-10）。
 - ソーシャルログイン（Google 等）は将来検討。

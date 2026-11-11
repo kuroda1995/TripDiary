@@ -7,7 +7,8 @@ import { SpotCard } from './SpotCard'
 type SpotListProps = {
   queryKey: QueryKey
   fetchPage: (cursor: string | null) => Promise<SpotPage>
-  emptyMessage: string
+  /** 0件のときの表示（文字列なら控えめな文章として表示する） */
+  emptyMessage: ReactNode
   /** 一覧のラベル（スクリーンリーダー向け） */
   label: string
   /** false の間は取得しない（ログイン状態の確認中など） */
@@ -55,7 +56,11 @@ export function SpotList({
 
   const spots = query.data.pages.flatMap((page) => page.items)
   if (spots.length === 0) {
-    return <p className="text-sm text-muted-foreground">{emptyMessage}</p>
+    return typeof emptyMessage === 'string' ? (
+      <p className="text-sm text-muted-foreground">{emptyMessage}</p>
+    ) : (
+      emptyMessage
+    )
   }
 
   return (

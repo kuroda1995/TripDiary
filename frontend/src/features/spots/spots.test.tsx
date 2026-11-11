@@ -2,14 +2,7 @@ import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { delay, http, HttpResponse } from 'msw'
 import { describe, expect, it } from 'vitest'
-import {
-  authResponse,
-  errorResponse,
-  meFixture,
-  otherUser,
-  spotFixture,
-  spotSummaryFixture,
-} from '@/test/msw/handlers'
+import { authResponse, errorResponse, otherUser, spotFixture, spotSummaryFixture } from '@/test/msw/handlers'
 import { server } from '@/test/msw/server'
 import { renderApp } from '@/test/render'
 
@@ -135,7 +128,9 @@ describe('スポット詳細', () => {
     expect(within(dialog).getByText(/「朝の清水寺」を削除します/)).toBeInTheDocument()
     await userEvent.click(within(dialog).getByRole('button', { name: '削除する' }))
 
-    expect(await screen.findByRole('heading', { name: '@taro_trip の投稿' })).toBeInTheDocument()
+    // 投稿者（本人）のプロフィール
+    expect(await screen.findByRole('heading', { level: 1, name: '旅するタロウ' })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'プロフィール編集' })).toBeInTheDocument()
     expect(deleted).toBe(true)
   })
 
@@ -286,36 +281,5 @@ describe('スポット編集', () => {
     renderApp('/spots/100/edit')
 
     expect(await screen.findByRole('heading', { name: '編集できません' })).toBeInTheDocument()
-  })
-})
-
-describe('ユーザー別一覧', () => {
-  it('ユーザーの投稿を表示し、本人には非公開の案内を出す', async () => {
-    givenLoggedIn()
-    server.use(
-      http.get('/api/v1/users/taro_trip/spots', () =>
-        HttpResponse.json({
-          items: [spotSummaryFixture(3, '自分だけのメモ', { visibility: 'PRIVATE' })],
-          nextCursor: null,
-        }),
-      ),
-    )
-
-    renderApp(`/users/${meFixture.username}`)
-
-    expect(await screen.findByRole('link', { name: '自分だけのメモ' })).toBeInTheDocument()
-    expect(screen.getByText('非公開のスポットはあなたにだけ表示されています。')).toBeInTheDocument()
-  })
-
-  it('存在しないユーザーは「存在しません」と表示する', async () => {
-    server.use(
-      http.get('/api/v1/users/nobody/spots', () =>
-        HttpResponse.json(errorResponse('USER_NOT_FOUND', 'なし'), { status: 404 }),
-      ),
-    )
-
-    renderApp('/users/nobody')
-
-    expect(await screen.findByText('@nobody というユーザーは存在しません。')).toBeInTheDocument()
   })
 })

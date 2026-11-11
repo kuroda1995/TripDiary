@@ -53,8 +53,14 @@ public class SecurityConfig {
         "/api/v1/spots/*",
         "/api/v1/spots/*/comments",
         "/api/v1/areas",
-        "/api/v1/users/*/spots"
+        "/api/v1/users/*",
+        "/api/v1/users/*/spots",
+        "/api/v1/users/*/following",
+        "/api/v1/users/*/followers"
     };
+
+    /** ログイン中のユーザー本人の API。{@link #PUBLIC_READ_PATHS} の {@code /users/*} より先に判定する。 */
+    static final String[] ME_PATHS = {"/api/v1/users/me", "/api/v1/users/me/**"};
 
     @Bean
     SecurityFilterChain securityFilterChain(
@@ -77,6 +83,8 @@ public class SecurityConfig {
                                         .permitAll()
                                         .requestMatchers(HttpMethod.POST, PUBLIC_AUTH_PATHS)
                                         .permitAll()
+                                        .requestMatchers(ME_PATHS)
+                                        .authenticated()
                                         .requestMatchers(HttpMethod.GET, PUBLIC_READ_PATHS)
                                         .permitAll()
                                         .anyRequest()
