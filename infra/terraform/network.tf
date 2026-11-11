@@ -68,14 +68,22 @@ resource "aws_security_group" "alb" {
   tags = { Name = "${local.name}-alb" }
 }
 
-# CloudFront の VPC オリジンは、ALB と同じ VPC 内のネットワークインターフェースから接続してくる
+# CloudFront の VPC オリジンからの通信は、CloudFront が VPC 内に作るセキュリティグループ
+# （CloudFront-VPCOrigins-Service-SG）を参照して許可する。VPC の CIDR で許可しても通らない
+data "aws_security_group" "cloudfront_vpc_origins" {
+  name   = "CloudFront-VPCOrigins-Service-SG"
+  vpc_id = aws_vpc.main.id
+
+  depends_on = [aws_cloudfront_distribution.web]
+}
+
 resource "aws_vpc_security_group_ingress_rule" "alb_http" {
-  security_group_id = aws_security_group.alb.id
-  description       = "HTTP from CloudFront VPC origin (inside VPC)"
-  cidr_ipv4         = aws_vpc.main.cidr_block
-  ip_protocol       = "tcp"
-  from_port         = 80
-  to_port           = 80
+  security_group_id            = aws_security_group.alb.id
+  description                  = "HTTP from CloudFront VPC origin"
+  referenced_security_group_id = data.aws_security_group.cloudfront_vpc_origins.id
+  ip_protocol                  = "tcp"
+  from_port                    = 80
+  to_port                      = 80
 }
 
 resource "aws_vpc_security_group_egress_rule" "alb_to_api" {

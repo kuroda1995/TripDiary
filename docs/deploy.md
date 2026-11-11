@@ -64,6 +64,7 @@ flowchart LR
 
 - **画面と API を同じ CloudFront で配信する。** リフレッシュトークンの Cookie が `SameSite=Strict` のため、画面と API のドメインが違うと Cookie が送られず、再読み込みでログインが切れる。`/api/*` と `/actuator/health` だけを ALB に転送する。
 - **SPA のルーティングは CloudFront Functions で行う。** 403/404 のカスタムエラーレスポンスで `index.html` を返す一般的な方法は、API の 404（JSON）まで `index.html` に書き換えてしまうため使わない。
+- **ALB は CloudFront からの通信だけを受け付ける。** VPC オリジンを作ると、CloudFront が VPC 内にネットワークインターフェースとセキュリティグループ（`CloudFront-VPCOrigins-Service-SG`）を作る。ALB のセキュリティグループでは、**このセキュリティグループを参照して**受信を許可する（VPC の CIDR で許可しても通らず、504 になる）。
 - **API はキャッシュしない。** `Authorization` ヘッダーはキャッシュポリシーに含めないとオリジンへ転送されないため、キャッシュキーに含めた上で TTL を 0 にしている。
 - **秘密情報はコードに出さない。** DB のパスワードは RDS が Secrets Manager で管理し、JWT の署名鍵は Terraform が生成して Secrets Manager に保存する。どちらも ECS が起動時に環境変数として渡す。
 - **写真バケット**は CORS で画面のドメインからの `PUT` だけを許可し、読み取りは CloudFront（OAC）経由のみ。
@@ -119,7 +120,13 @@ powershell -ExecutionPolicy Bypass -File infra/deploy.ps1
 
 初回は RDS と CloudFront の作成に 15〜20 分ほどかかる。
 
-### 3.1 動作確認
+### 3.1 実施記録
+
+| 日付 | 内容 | 結果 |
+| --- | --- | --- |
+| 2026-11-11 | 初回構築（54リソース） | `/api/*` が 504 → ALB のセキュリティグループを修正（1.2）して解消。E2E 17件をデモ環境に対して実行し、すべて成功。ERROR・WARN ログ 0件 |
+
+### 3.2 動作確認
 
 ```powershell
 # アプリの URL
@@ -145,6 +152,7 @@ terraform -chdir=infra/terraform destroy
 
 - DB・写真・ログなど、**すべてのデータが消える**（最終スナップショットは取らない）。
 - CloudFront の無効化・削除に時間がかかるため、完了まで 10〜20 分ほどかかる。
+- `CloudFront-VPCOrigins-Service-SG` は CloudFront が作ったもので、Terraform の管理外。VPC の削除がこのセキュリティグループのせいで失敗した場合は、数分待って VPC オリジンの削除が反映されてから、もう一度 `terraform destroy` を実行する（残る場合は EC2 コンソールから手動で削除する）。
 - 削除後、AWS コンソールの「請求とコスト管理」で、課金が止まっていることを確認する。
 
 ---
@@ -154,6 +162,7 @@ terraform -chdir=infra/terraform destroy
 | 項目 | 内容 |
 | --- | --- |
 | HTTPS の区間 | ブラウザ〜CloudFront は HTTPS。CloudFront〜ALB は HTTP だが、VPC オリジンのため AWS のネットワーク内で完結し、インターネットを通らない |
-| ログイン試行の制限 | API が1台のため、制限（同一 IP から5分間に10回）は設計どおり全体に効く |
+| テストデータ | E2E をデモ環境に対して実行すると、`e2e_` で始まるユーザーと投稿が残る |
+| 起動時間 | 0.5 vCPU のため、API の起動に約60秒かかる（ヘルスチェックの猶予は180秒） |
 | 可用性 | API・DB とも1台のため、障害やデプロイ時に一時的に止まることがある |
 | スロースタート | ターゲットグループに設定済み（60秒）。ただし、ほかに正常なタスクがいないときは効かないため、1台構成では意味を持たない |
