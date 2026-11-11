@@ -17,3 +17,8 @@ trim_trailing_whitespace = false
 
 [*.{bat,cmd}]
 end_of_line = crlf
+
+# Windows PowerShell 5.1 は BOM なしの UTF-8 を正しく読めない
+[*.ps1]
+charset = utf-8-bom
+indent_size = 4

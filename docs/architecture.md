@@ -78,10 +78,11 @@ mindmap
 | ログ | Logback + Spring Boot 構造化ログ（`logging.structured.format.console=logstash`） | 追加ライブラリなしで JSON 構造化ログ・MDC を出力 |
 | DB | PostgreSQL 16 (RDS) | |
 | 画像 | S3 + CloudFront | 署名付きURLで直接アップロード、CDN 配信 |
-| 実行基盤 | ECS Fargate（※仮） | コンテナ実行。EC2 のサーバー管理を不要にする |
+| 実行基盤 | ECS Fargate | コンテナ実行。EC2 のサーバー管理を不要にする |
+| IaC | Terraform | AWS のリソースをコードで管理し、`terraform destroy` で一括削除できるようにする |
 | CI | GitHub Actions | PR / push 時に単体・結合・E2E テスト |
 
-> ※ API の実行基盤（ECS Fargate / EC2 / Elastic Beanstalk）は要件で未指定のため ECS Fargate を仮置きとする。
+> ※ API の実行基盤（ECS Fargate / EC2 / Elastic Beanstalk）は要件で未指定のため ECS Fargate を採用した。
 
 ---
 
@@ -134,7 +135,9 @@ flowchart LR
 | RDS PostgreSQL | 永続データ | Private Subnet、本番は Multi-AZ・自動バックアップ7日 |
 | S3（画像） | 投稿写真・アイコン | パブリックアクセスブロック有効。CloudFront OAC 経由でのみ読み取り |
 | Secrets Manager | 機密情報 | DB パスワード・JWT 署名鍵 |
-| CloudWatch Logs | ログ集約 | 有償 APM は使用しない（[4章](#4-ログ設計と監視)） |
+| CloudWatch Logs | ログ集約 | 有償 APM は使用しない（[5章](#5-ログ設計と監視)） |
+
+> 費用を抑えたデモ環境（API 1台・Single-AZ・CloudFront で画面と API を同じドメインにまとめる構成）は [deploy.md](./deploy.md) を参照。
 
 ---
 
@@ -337,7 +340,7 @@ flowchart LR
 
     ci -->|オールグリーン| review[開発者がレビュー]
     review -->|手動マージ| main[main]
-    main -.->|将来: deploy.yml| aws[AWS]
+    main -.->|手元から手動: infra/deploy.ps1| aws[AWS]
 
     perf["GitHub Actions: perf.yml<br/>k6 負荷テスト<br/>workflow_dispatch のみ"]
     review -. 全機能完成時に1回だけ手動実行 .-> perf
@@ -347,7 +350,7 @@ flowchart LR
 | --- | --- | --- |
 | `ci.yml` | `pull_request`、`push`（全ブランチ） | Lint、単体テスト、結合テスト、E2E テスト |
 | `perf.yml` | **`workflow_dispatch` のみ**（schedule / push / PR トリガーは設定禁止） | k6 による負荷テスト |
-| `deploy.yml` | 将来検討（main へのマージ後） | ECR push → ECS デプロイ、S3 へフロント配置 |
+| `infra/deploy.ps1`（手元から手動） | 開発者が実行 | ECR push → Terraform で ECS 更新 → S3 へフロント配置。デモ環境の構成・手順は [deploy.md](./deploy.md) |
 
 - **main へのマージは開発者が手動で行う。** 自動マージ（auto-merge）は有効化しない。
 - ブランチ保護: main は PR 必須・CI 成功必須とする。
