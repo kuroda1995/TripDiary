@@ -134,7 +134,7 @@ describe('行ってみたい！した投稿', () => {
         }),
       ),
     )
-    renderApp('/me')
+    renderApp('/me?tab=likes')
 
     const list = await screen.findByRole('list', { name: '行ってみたい！した投稿' })
     expect(within(list).getByRole('link', { name: '行きたい温泉' })).toBeInTheDocument()
@@ -144,7 +144,7 @@ describe('行ってみたい！した投稿', () => {
   it('まだ無ければ案内を表示する', async () => {
     givenLoggedIn()
     server.use(http.get('/api/v1/users/me', () => HttpResponse.json(authResponse().user)))
-    renderApp('/me')
+    renderApp('/me?tab=likes')
 
     expect(await screen.findByText(/まだ行ってみたい！した投稿はありません/)).toBeInTheDocument()
   })

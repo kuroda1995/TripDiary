@@ -5,6 +5,7 @@ import { buttonVariants } from '@/components/ui/button'
 import { useAuth } from '@/features/auth/useAuth'
 import { CommentSection } from '@/features/comments/components/CommentSection'
 import { LikeButton } from '@/features/likes/components/LikeButton'
+import { StatusSelect } from '@/features/status/components/StatusSelect'
 import { ApiError } from '@/lib/apiClient'
 import { formatDate, formatDateTime } from '@/lib/date'
 import { useSpot } from '../api'
@@ -68,7 +69,10 @@ function SpotDetail({ spotId }: { spotId: number }) {
           {spot.visibility === 'PRIVATE' && <Badge variant="outline">非公開</Badge>}
         </p>
         <AreaTagBadges tags={spot.areaTags} />
-        <LikeButton spotId={spot.id} liked={spot.likedByMe} likeCount={spot.likeCount} size="default" />
+        <div className="flex flex-wrap items-center gap-3">
+          <LikeButton spotId={spot.id} liked={spot.likedByMe} likeCount={spot.likeCount} size="default" />
+          <StatusSelect spotId={spot.id} status={spot.myStatus} showLabel />
+        </div>
       </header>
 
       <PhotoGallery photos={spot.photos} title={spot.title} />
