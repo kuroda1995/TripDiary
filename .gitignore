@@ -9,3 +9,11 @@ Thumbs.db
 .env
 .env.*
 !.env.example
+
+# Terraform（状態ファイルは秘密情報を含むためコミットしない。プロバイダのロックファイルはコミットする）
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+crash.log
+*.auto.tfvars

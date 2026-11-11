@@ -72,6 +72,23 @@ jobs:
           path: frontend/coverage
           retention-days: 7
 
+  # AWS には接続しない（構文・書式・設定の整合性だけを確認する。apply は手元から手動。docs/deploy.md）
+  infra:
+    name: Infra（Terraform fmt・validate）
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: infra/terraform
+    steps:
+      - uses: actions/checkout@v5
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: '1.15.8'
+      - run: terraform fmt -check -recursive
+      - run: terraform init -backend=false -input=false
+      - run: terraform validate
+
   e2e:
     name: E2E（Playwright）
     needs: [backend, frontend]
