@@ -125,6 +125,7 @@ powershell -ExecutionPolicy Bypass -File infra/deploy.ps1
 | 日付 | 内容 | 結果 |
 | --- | --- | --- |
 | 2026-11-11 | 初回構築（54リソース） | `/api/*` が 504 → ALB のセキュリティグループを修正（1.2）して解消。E2E 17件をデモ環境に対して実行し、すべて成功。ERROR・WARN ログ 0件 |
+| 2026-11-11 | E2E のテストデータを削除（3.4）し、サンプルデータを投入（3.3） | トップ・ログイン・投稿詳細の表示を確認 |
 
 ### 3.2 動作確認
 
@@ -141,6 +142,32 @@ $env:E2E_BASE_URL = (terraform -chdir=../infra/terraform output -raw web_url)
 npx playwright test
 Remove-Item Env:E2E_BASE_URL
 ```
+
+### 3.3 サンプルデータ
+
+メンターさんが見て操作できるよう、API を通してサンプルデータ（ユーザー3人・投稿10件〈うち非公開1件〉・コメント・行ってみたい！・フォロー・行った！/行きたい）を入れる。写真は付けない。
+
+```powershell
+$env:DEMO_PASSWORD = '<3ユーザー共通のパスワード>'   # コミットしない
+node infra/demo-seed.mjs (terraform -chdir=infra/terraform output -raw web_url)
+Remove-Item Env:DEMO_PASSWORD
+```
+
+| メールアドレス | 表示名 |
+| --- | --- |
+| `haruka@example.com` | 旅するハルカ（非公開の投稿あり。ログインして見てもらう用） |
+| `kenta@example.com` | カメラ好きのケンタ |
+| `misaki@example.com` | 温泉めぐりのミサキ |
+
+### 3.4 データを空にする
+
+RDS はプライベートサブネットにあり手元から接続できないため、一時的な ECS タスク（`public.ecr.aws/docker/library/postgres:16-alpine`）を API と同じサブネット・セキュリティグループで1回だけ動かし、次の SQL を実行する。エリアタグ（マスターデータ）は残る。終わったらタスク定義を登録解除する。
+
+```sql
+TRUNCATE users RESTART IDENTITY CASCADE;
+```
+
+あわせて写真バケットも空にする（`aws s3 rm s3://tripdiary-photos-<アカウントID> --recursive`）。
 
 ---
 
@@ -162,7 +189,7 @@ terraform -chdir=infra/terraform destroy
 | 項目 | 内容 |
 | --- | --- |
 | HTTPS の区間 | ブラウザ〜CloudFront は HTTPS。CloudFront〜ALB は HTTP だが、VPC オリジンのため AWS のネットワーク内で完結し、インターネットを通らない |
-| テストデータ | E2E をデモ環境に対して実行すると、`e2e_` で始まるユーザーと投稿が残る |
+| テストデータ | E2E をデモ環境に対して実行すると、`e2e_` で始まるユーザーと投稿が残る（3.4 の手順で消せる） |
 | 起動時間 | 0.5 vCPU のため、API の起動に約60秒かかる（ヘルスチェックの猶予は180秒） |
 | 可用性 | API・DB とも1台のため、障害やデプロイ時に一時的に止まることがある |
 | スロースタート | ターゲットグループに設定済み（60秒）。ただし、ほかに正常なタスクがいないときは効かないため、1台構成では意味を持たない |
