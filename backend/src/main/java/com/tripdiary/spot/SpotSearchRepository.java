@@ -58,10 +58,11 @@ public class SpotSearchRepository {
         if (criteria.sort() == SpotSort.POPULAR) {
             if (after != null) {
                 conditions.add(
-                        "(lc.like_count, s.created_at, s.id) < (:afterLikeCount, :afterCreatedAt, :afterId)");
+                        "(s.like_count, s.created_at, s.id) < (:afterLikeCount, :afterCreatedAt, :afterId)");
                 params.addValue("afterLikeCount", after.likeCount());
             }
-            order = "lc.like_count DESC, s.created_at DESC, s.id DESC";
+            // idx_spots_public_like_count の順（件数は spot_likes のトリガーで保たれる。V5）
+            order = "s.like_count DESC, s.created_at DESC, s.id DESC";
         } else {
             if (after != null) {
                 conditions.add("(s.created_at, s.id) < (:afterCreatedAt, :afterId)");
@@ -75,10 +76,8 @@ public class SpotSearchRepository {
 
         String sql =
                 """
-                SELECT s.id, s.created_at, lc.like_count
+                SELECT s.id, s.created_at, s.like_count
                 FROM spots s
-                CROSS JOIN LATERAL (SELECT count(*) AS like_count
-                                    FROM spot_likes l WHERE l.spot_id = s.id) lc
                 WHERE %s
                 ORDER BY %s
                 LIMIT :limit

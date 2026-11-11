@@ -99,4 +99,4 @@ PUT / DELETE のレスポンス `200 OK`:
 
 - いいねされたときの通知は将来検討。
 - 一覧・詳細に出す件数（行ってみたい！数・自分が付けたか・コメント数）は、`spot.JdbcSpotReactionReader` が各テーブルを直接読んで1回の SQL で取得します（`spot` パッケージが `like` / `comment` パッケージに依存しないようにするため）。
-- 件数の集計が重くなった場合は `spots.like_count` に件数を持たせる（[DB 設計書 3.3](../database_schema.md#33-spotsスポット投稿)）。
+- 件数は `spots.like_count`（`spot_likes` のトリガーで保つ。V5）から読む。負荷テストで人気順の検索が重かったため、COUNT 集計から変更した（[DB 設計書 3.3](../database_schema.md#33-spotsスポット投稿)、[負荷テスト結果報告書](../perf_test_report.md) 4.1）。

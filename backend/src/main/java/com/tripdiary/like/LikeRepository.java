@@ -36,13 +36,16 @@ public class LikeRepository {
                 Map.of("userId", userId, "spotId", spotId));
     }
 
+    /** 件数（{@code spots.like_count}。付け外しと同じトランザクション内でトリガーが更新済み。V5）。 */
     public long count(long spotId) {
-        Long count =
-                jdbc.queryForObject(
-                        "SELECT count(*) FROM spot_likes WHERE spot_id = :spotId",
+        return jdbc
+                .query(
+                        "SELECT like_count FROM spots WHERE id = :spotId",
                         Map.of("spotId", spotId),
-                        Long.class);
-        return count == null ? 0 : count;
+                        (rs, row) -> rs.getLong("like_count"))
+                .stream()
+                .findFirst()
+                .orElse(0L);
     }
 
     /** 自分が付けたスポット（付けた日時）。 */
