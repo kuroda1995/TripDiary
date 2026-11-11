@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router'
+import { UserAvatar } from '@/components/UserAvatar'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { useAuth } from '../useAuth'
 
@@ -42,6 +43,7 @@ export function AuthMenu() {
         投稿する
       </Link>
       <Link to="/me" className={buttonVariants({ variant: 'ghost', size: 'sm' })}>
+        <UserAvatar displayName={auth.user.displayName} avatarUrl={auth.user.avatarUrl} size="sm" />
         {auth.user.displayName}
       </Link>
       <Button variant="outline" size="sm" onClick={handleLogout} disabled={loggingOut}>

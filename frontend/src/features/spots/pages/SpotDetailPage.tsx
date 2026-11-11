@@ -1,4 +1,5 @@
 import { Link, useNavigate } from 'react-router'
+import { UserAvatar } from '@/components/UserAvatar'
 import { Badge } from '@/components/ui/badge'
 import { buttonVariants } from '@/components/ui/button'
 import { useAuth } from '@/features/auth/useAuth'
@@ -78,7 +79,11 @@ function SpotDetail({ spotId }: { spotId: number }) {
       <dl className="grid grid-cols-[max-content_1fr] gap-x-6 gap-y-1 border-t pt-4 text-sm">
         <dt className="text-muted-foreground">投稿者</dt>
         <dd>
-          <Link to={`/users/${spot.author.username}`} className="hover:underline">
+          <Link
+            to={`/users/${spot.author.username}`}
+            className="inline-flex items-center gap-1.5 hover:underline"
+          >
+            <UserAvatar displayName={spot.author.displayName} avatarUrl={spot.author.avatarUrl} size="sm" />
             {spot.author.displayName}
           </Link>
         </dd>

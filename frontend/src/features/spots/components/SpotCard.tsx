@@ -1,4 +1,5 @@
 import { Link } from 'react-router'
+import { UserAvatar } from '@/components/UserAvatar'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { formatDate } from '@/lib/date'
@@ -36,8 +37,12 @@ export function SpotCard({ spot }: { spot: SpotSummary }) {
         {spot.impressionExcerpt && (
           <p className="whitespace-pre-line text-muted-foreground">{spot.impressionExcerpt}</p>
         )}
-        <p className="text-xs text-muted-foreground">
-          <Link to={`/users/${spot.author.username}`} className="hover:underline">
+        <p className="flex flex-wrap items-center gap-x-1.5 text-xs text-muted-foreground">
+          <Link
+            to={`/users/${spot.author.username}`}
+            className="inline-flex items-center gap-1.5 hover:underline"
+          >
+            <UserAvatar displayName={spot.author.displayName} avatarUrl={spot.author.avatarUrl} size="sm" />
             {spot.author.displayName}
           </Link>
           {spot.visitedOn && <span> ・ {formatDate(spot.visitedOn)}に訪問</span>}

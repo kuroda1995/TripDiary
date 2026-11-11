@@ -7,6 +7,7 @@
 
 export const MAX_PHOTOS = 10
 export const MAX_PHOTO_BYTES = 10 * 1024 * 1024
+export const MAX_AVATAR_BYTES = 5 * 1024 * 1024
 
 /** サーバーへ送る形式（HEIC は変換後の JPEG で送る）。 */
 const UPLOAD_TYPES = ['image/jpeg', 'image/png', 'image/webp'] as const
@@ -39,14 +40,18 @@ async function convertHeicToJpeg(file: File): Promise<File> {
   }
 }
 
-/** アップロードできる形にしたファイルを返す。条件外なら PhotoFileError。 */
-export async function prepareForUpload(file: File): Promise<File> {
+/**
+ * アップロードできる形にしたファイルを返す。条件外なら PhotoFileError。
+ *
+ * @param maxBytes サイズ上限（スポット写真は10MB、アイコンは5MB）
+ */
+export async function prepareForUpload(file: File, maxBytes = MAX_PHOTO_BYTES): Promise<File> {
   const prepared = isHeicFile(file) ? await convertHeicToJpeg(file) : file
   if (!(UPLOAD_TYPES as readonly string[]).includes(prepared.type)) {
     throw new PhotoFileError('対応していない画像形式です（JPEG / PNG / WebP / HEIC のみ）')
   }
-  if (prepared.size > MAX_PHOTO_BYTES) {
-    throw new PhotoFileError('画像のサイズは10MBまでです')
+  if (prepared.size > maxBytes) {
+    throw new PhotoFileError(`画像のサイズは${maxBytes / (1024 * 1024)}MBまでです`)
   }
   if (prepared.size === 0) {
     throw new PhotoFileError('空のファイルはアップロードできません')
