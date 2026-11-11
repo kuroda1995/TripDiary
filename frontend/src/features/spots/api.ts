@@ -11,6 +11,9 @@ export const spotKeys = {
   myLikes: () => [...spotKeys.all, 'my-likes'] as const,
   /** フォロー中ユーザーの新着（取得は features/follow/api.ts） */
   timeline: () => [...spotKeys.all, 'timeline'] as const,
+  /** 検索結果（取得は features/search/api.ts） */
+  search: (query: { areaIds: number[]; q: string; sort: string }) =>
+    [...spotKeys.all, 'search', query] as const,
   detail: (id: number) => [...spotKeys.all, 'detail', id] as const,
 }
 

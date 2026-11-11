@@ -54,7 +54,11 @@ export function SpotList({
     )
   }
 
-  const spots = query.data.pages.flatMap((page) => page.items)
+  // 人気順などはページをめくる間に順位が動くと同じスポットが再び返り得るため、先に出たものだけを表示する
+  const seen = new Set<number>()
+  const spots = query.data.pages
+    .flatMap((page) => page.items)
+    .filter((spot) => !seen.has(spot.id) && seen.add(spot.id))
   if (spots.length === 0) {
     return typeof emptyMessage === 'string' ? (
       <p className="text-sm text-muted-foreground">{emptyMessage}</p>
