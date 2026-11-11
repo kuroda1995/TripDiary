@@ -178,13 +178,17 @@ erDiagram
 | `longitude` | `NUMERIC(9,6)` | CHECK（-180〜180） | `NULL` | 経度（将来の地図機能用） |
 | `created_at` | `TIMESTAMPTZ` | NN | `now()` | 投稿日時 |
 | `updated_at` | `TIMESTAMPTZ` | NN | `now()` | 更新日時 |
+| `like_count` | `BIGINT` | NN, CHECK（`>= 0`） | `0` | 「行ってみたい！」の件数（V5 で追加。非正規化） |
 
 インデックス:
 - `idx_spots_user_id_created_at` : `(user_id, created_at DESC)` — プロフィール・タイムライン
 - `idx_spots_public_created_at` : `(created_at DESC, id DESC) WHERE visibility = 'PUBLIC'` — 新着一覧（部分インデックス）
+- `idx_spots_public_like_count` : `(like_count DESC, created_at DESC, id DESC) WHERE visibility = 'PUBLIC'` — 人気順の検索・カーソルページング（V5）
 - `idx_spots_title_trgm` / `idx_spots_location_trgm` : `GIN (title gin_trgm_ops)` 等 — キーワード部分一致検索（`pg_trgm` 拡張、SRCH-04 対応時）
 
-> 「行ってみたい！」数・コメント数は初期リリースでは `COUNT` 集計で取得する。負荷が問題になった場合は `spots` に `like_count` / `comment_count` の非正規化カラムを追加する。
+> **`like_count` はトリガー `trg_spot_likes_like_count`（`spot_likes` の INSERT / DELETE の後に ±1）で保つ。** アプリから直接更新しないこと。アプリの経路だけでなく、ユーザー削除に伴う `spot_likes` の連鎖削除でも件数がずれないよう、DB 側で保っている。負荷テスト（[perf_test_report.md](./perf_test_report.md) 4章 #1）で人気順の検索が DB 負荷の大半を占めたため追加した。
+>
+> コメント数は引き続き `COUNT` 集計（`idx_comments_spot_id_created_at`）で取得する。並び替えに使わず、1回の SQL でまとめて数えているため問題になっていない。
 
 ### 3.4 `spot_photos`（スポット写真）
 
@@ -395,6 +399,8 @@ CREATE INDEX idx_spots_user_id_created_at ON spots (user_id, created_at DESC);
 CREATE INDEX idx_spots_public_created_at  ON spots (created_at DESC, id DESC) WHERE visibility = 'PUBLIC';
 CREATE INDEX idx_spots_title_trgm         ON spots USING GIN (title gin_trgm_ops);
 CREATE INDEX idx_spots_location_trgm      ON spots USING GIN (location_name gin_trgm_ops);
+-- V5__spots_like_count.sql で like_count 列・トリガー trg_spot_likes_like_count・インデックスを追加
+CREATE INDEX idx_spots_public_like_count  ON spots (like_count DESC, created_at DESC, id DESC) WHERE visibility = 'PUBLIC';
 
 -- 4. spot_photos
 CREATE TABLE spot_photos (
@@ -526,7 +532,7 @@ LIMIT 20;
 
 ```sql
 SELECT s.id,
-       (SELECT count(*) FROM spot_likes l WHERE l.spot_id = s.id)                   AS like_count,
+       s.like_count,                                                                 -- V5 でトリガーで保つ列に変更
        (SELECT count(*) FROM comments   c WHERE c.spot_id = s.id)                   AS comment_count,
        EXISTS (SELECT 1 FROM spot_likes l WHERE l.spot_id = s.id AND l.user_id = :me) AS liked_by_me,
        (SELECT st.status FROM user_spot_statuses st

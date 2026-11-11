@@ -12,9 +12,9 @@ import org.springframework.stereotype.Component;
  * 行ってみたい！の件数・閲覧者が付けたか・コメント件数・閲覧者のステータスを、スポットの数に関係なく1回の SQL で取得する。
  *
  * <p>テーブル（{@code spot_likes} / {@code comments} / {@code
- * user_spot_statuses}）を直接読むため、like・comment・status パッケージには依存しない。 件数はそれぞれのインデックス（{@code
- * idx_spot_likes_spot_id} / {@code idx_comments_spot_id_created_at}）で数える。 集計が重くなった場合は {@code spots}
- * に件数カラムを持たせる（docs/database_schema.md 3.3）。
+ * user_spot_statuses}）を直接読むため、like・comment・status パッケージには依存しない。 行ってみたい！の件数は {@code
+ * spots.like_count}（{@code spot_likes} のトリガーで保たれる。V5）を読み、コメント件数はインデックス（{@code
+ * idx_comments_spot_id_created_at}）で数える。
  */
 @Component
 @RequiredArgsConstructor
@@ -26,7 +26,7 @@ public class JdbcSpotReactionReader implements SpotReactionReader {
     private static final String SQL =
             """
             SELECT s.id,
-                   (SELECT count(*) FROM spot_likes l WHERE l.spot_id = s.id) AS like_count,
+                   s.like_count,
                    EXISTS (SELECT 1 FROM spot_likes l
                            WHERE l.spot_id = s.id AND l.user_id = :viewerId) AS liked,
                    (SELECT count(*) FROM comments c WHERE c.spot_id = s.id) AS comment_count,
