@@ -3,7 +3,9 @@
  *
  * - HEIC / HEIF（iPhone の標準形式）は Chrome などで表示できないため、ブラウザで JPEG に変換してから送る
  * - 形式・サイズが条件外ならアップロード前にエラーにする（サーバーでも同じ条件で確認する）
+ * - 位置情報などのメタデータを取り除く（stripMetadata.ts）
  */
+import { detectImageFormat, MetadataStripError, stripMetadata } from './stripMetadata'
 
 export const MAX_PHOTOS = 10
 export const MAX_PHOTO_BYTES = 10 * 1024 * 1024
@@ -46,15 +48,40 @@ async function convertHeicToJpeg(file: File): Promise<File> {
  * @param maxBytes サイズ上限（スポット写真は10MB、アイコンは5MB）
  */
 export async function prepareForUpload(file: File, maxBytes = MAX_PHOTO_BYTES): Promise<File> {
-  const prepared = isHeicFile(file) ? await convertHeicToJpeg(file) : file
-  if (!(UPLOAD_TYPES as readonly string[]).includes(prepared.type)) {
+  const converted = isHeicFile(file) ? await convertHeicToJpeg(file) : file
+  if (!(UPLOAD_TYPES as readonly string[]).includes(converted.type)) {
     throw new PhotoFileError('対応していない画像形式です（JPEG / PNG / WebP / HEIC のみ）')
   }
+  if (converted.size === 0) {
+    throw new PhotoFileError('空のファイルはアップロードできません')
+  }
+  // 位置情報などのメタデータは取り除いてから送る（取り除いた分だけ小さくなるため、サイズはその後で確かめる）
+  const prepared = await withoutMetadata(converted)
   if (prepared.size > maxBytes) {
     throw new PhotoFileError(`画像のサイズは${maxBytes / (1024 * 1024)}MBまでです`)
   }
-  if (prepared.size === 0) {
-    throw new PhotoFileError('空のファイルはアップロードできません')
-  }
   return prepared
+}
+
+/**
+ * 位置情報などのメタデータを取り除いたファイル（docs/features/03_photo_upload.md 5章）。
+ * 中身が宣言された形式と違う・壊れている場合は、確実に取り除けないためアップロードしない。
+ */
+async function withoutMetadata(file: File): Promise<File> {
+  const bytes = new Uint8Array(await file.arrayBuffer())
+  const expected = file.type.replace('image/', '')
+  if (detectImageFormat(bytes) !== expected) {
+    throw new PhotoFileError('画像ファイルを読み込めませんでした。別の画像をお試しください')
+  }
+  let stripped: Uint8Array
+  try {
+    stripped = stripMetadata(bytes)
+  } catch (e) {
+    if (!(e instanceof MetadataStripError)) throw e
+    throw new PhotoFileError('画像ファイルを読み込めませんでした。別の画像をお試しください')
+  }
+  return new File([stripped as Uint8Array<ArrayBuffer>], file.name, {
+    type: file.type,
+    lastModified: file.lastModified,
+  })
 }
