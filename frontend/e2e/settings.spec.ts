@@ -82,6 +82,10 @@ test('パスワードを変更すると、新しいパスワードでだけロ�
   await expect(page.getByRole('link', { name: user.displayName })).toBeVisible()
 
   await page.getByRole('button', { name: 'ログアウト' }).click()
+  // ログアウトの通信が終わる前に画面を移ると Cookie が消えず、ログイン状態に戻ってしまうため待つ
+  await expect(
+    page.getByRole('navigation', { name: 'アカウント' }).getByRole('link', { name: 'ログイン' }),
+  ).toBeVisible()
   await page.goto('/login')
   await page.getByLabel('メールアドレス').fill(user.email)
   await page.getByLabel('パスワード').fill('Passw0rd123')

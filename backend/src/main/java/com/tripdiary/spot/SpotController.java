@@ -57,8 +57,9 @@ public class SpotController {
                     @RequestParam(defaultValue = "" + DEFAULT_LIMIT)
                     @Min(1)
                     @Max(MAX_LIMIT)
-                    int limit) {
-        return spotService.listPublic(cursor, limit);
+                    int limit,
+            @AuthenticationPrincipal AuthenticatedUser viewer) {
+        return spotService.listPublic(viewerId(viewer), cursor, limit);
     }
 
     @Operation(summary = "ユーザー別一覧", description = "本人が見る場合は非公開スポットも含める。")

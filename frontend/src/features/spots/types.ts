@@ -27,6 +27,8 @@ export type Spot = {
   /** 表示順（先頭がカバー写真） */
   photos: SpotPhoto[]
   author: Author
+  likeCount: number
+  likedByMe: boolean
   createdAt: string
   updatedAt: string
 }
@@ -42,6 +44,8 @@ export type SpotSummary = {
   visibility: Visibility
   coverPhotoUrl: string | null
   author: Author
+  likeCount: number
+  likedByMe: boolean
   createdAt: string
 }
 

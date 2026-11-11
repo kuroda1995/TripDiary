@@ -1,4 +1,5 @@
 import { Link, Outlet } from 'react-router'
+import { Toaster } from 'sonner'
 import { AuthProvider } from '@/features/auth/AuthProvider'
 import { AuthMenu } from '@/features/auth/components/AuthMenu'
 import { ApiStatusBadge } from '@/features/system/components/ApiStatusBadge'
@@ -18,6 +19,7 @@ export function RootLayout() {
         <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8">
           <Outlet />
         </main>
+        <Toaster position="bottom-center" richColors closeButton />
         <footer className="border-t">
           <div className="mx-auto flex h-12 w-full max-w-5xl items-center justify-end px-4">
             <ApiStatusBadge />

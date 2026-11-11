@@ -3,6 +3,7 @@ package com.tripdiary.spot.dto;
 import com.tripdiary.area.dto.AreaTagSummary;
 import com.tripdiary.spot.Spot;
 import com.tripdiary.spot.SpotPhoto;
+import com.tripdiary.spot.SpotReactions;
 import com.tripdiary.spot.Visibility;
 import com.tripdiary.user.dto.UserResponse;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -24,13 +25,16 @@ public record SpotResponse(
         Visibility visibility,
         @Schema(description = "写真（表示順。先頭がカバー写真）") List<SpotPhotoResponse> photos,
         UserResponse author,
+        @Schema(description = "行ってみたい！の件数", example = "12") long likeCount,
+        @Schema(description = "閲覧者が行ってみたい！を付けているか（未ログインは false）") boolean likedByMe,
         Instant createdAt,
         Instant updatedAt) {
 
     /**
      * @param photoUrl S3 キーから配信 URL を作る関数
      */
-    public static SpotResponse from(Spot spot, UnaryOperator<String> photoUrl) {
+    public static SpotResponse from(
+            Spot spot, UnaryOperator<String> photoUrl, SpotReactions reactions) {
         return new SpotResponse(
                 spot.getId(),
                 spot.getTitle(),
@@ -44,6 +48,8 @@ public record SpotResponse(
                         .map(photo -> SpotPhotoResponse.from(photo, photoUrl))
                         .toList(),
                 UserResponse.from(spot.getUser(), photoUrl),
+                reactions.likeCount(),
+                reactions.likedByMe(),
                 spot.getCreatedAt(),
                 spot.getUpdatedAt());
     }

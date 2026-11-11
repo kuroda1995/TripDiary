@@ -2,6 +2,7 @@ import { Link } from 'react-router'
 import { UserAvatar } from '@/components/UserAvatar'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { LikeButton } from '@/features/likes/components/LikeButton'
 import { formatDate } from '@/lib/date'
 import type { SpotSummary } from '../types'
 import { AreaTagBadges } from './AreaTagBadges'
@@ -47,6 +48,7 @@ export function SpotCard({ spot }: { spot: SpotSummary }) {
           </Link>
           {spot.visitedOn && <span> ・ {formatDate(spot.visitedOn)}に訪問</span>}
         </p>
+        <LikeButton spotId={spot.id} liked={spot.likedByMe} likeCount={spot.likeCount} />
       </CardContent>
     </Card>
   )

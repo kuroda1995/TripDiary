@@ -3,9 +3,12 @@ import { Link } from 'react-router'
 import { UserAvatar } from '@/components/UserAvatar'
 import { buttonVariants } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { fetchMyLikes } from '@/features/likes/api'
+import { spotKeys } from '@/features/spots/api'
+import { SpotList } from '@/features/spots/components/SpotList'
 import { fetchMe } from '../api'
 
-/** マイページ（ログイン必須）。訪問済み / 行きたいリストはステータス管理機能で追加する。 */
+/** マイページ（ログイン必須）。訪問済み / 行きたいリストはステータス管理機能でタブとして追加する。 */
 export function MyPage() {
   const { data: me, isPending, isError } = useQuery({ queryKey: ['users', 'me'], queryFn: fetchMe })
 
@@ -51,6 +54,17 @@ export function MyPage() {
           )}
         </CardContent>
       </Card>
+      <section aria-labelledby="my-likes-heading" className="space-y-4">
+        <h2 id="my-likes-heading" className="text-xl font-bold">
+          行ってみたい！した投稿
+        </h2>
+        <SpotList
+          queryKey={spotKeys.myLikes()}
+          fetchPage={fetchMyLikes}
+          emptyMessage="まだ行ってみたい！した投稿はありません。気になるスポットのハートを押してみましょう。"
+          label="行ってみたい！した投稿"
+        />
+      </section>
     </section>
   )
 }

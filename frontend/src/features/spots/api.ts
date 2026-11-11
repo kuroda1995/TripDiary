@@ -8,6 +8,7 @@ export const spotKeys = {
   all: ['spots'] as const,
   latest: () => [...spotKeys.all, 'latest'] as const,
   byUser: (username: string) => [...spotKeys.all, 'user', username.toLowerCase()] as const,
+  myLikes: () => [...spotKeys.all, 'my-likes'] as const,
   detail: (id: number) => [...spotKeys.all, 'detail', id] as const,
 }
 
