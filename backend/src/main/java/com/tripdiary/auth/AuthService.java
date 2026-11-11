@@ -3,7 +3,9 @@ package com.tripdiary.auth;
 import com.tripdiary.auth.AccessTokenService.IssuedAccessToken;
 import com.tripdiary.auth.RefreshTokenService.IssuedRefreshToken;
 import com.tripdiary.auth.dto.LoginRequest;
+import com.tripdiary.auth.dto.PasswordChangeRequest;
 import com.tripdiary.auth.dto.SignupRequest;
+import com.tripdiary.common.exception.BadRequestException;
 import com.tripdiary.common.exception.ConflictException;
 import com.tripdiary.common.exception.UnauthorizedException;
 import com.tripdiary.user.User;
@@ -22,6 +24,8 @@ public class AuthService {
     static final String EMAIL_ALREADY_EXISTS = "EMAIL_ALREADY_EXISTS";
     static final String USERNAME_ALREADY_EXISTS = "USERNAME_ALREADY_EXISTS";
     static final String INVALID_CREDENTIALS = "INVALID_CREDENTIALS";
+    static final String INVALID_CURRENT_PASSWORD = "INVALID_CURRENT_PASSWORD";
+    static final String PASSWORD_UNCHANGED = "PASSWORD_UNCHANGED";
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
@@ -91,6 +95,31 @@ public class AuthService {
     @Transactional
     public void logout(String rawRefreshToken) {
         refreshTokenService.revoke(rawRefreshToken);
+    }
+
+    /**
+     * パスワードを変更する（docs/features/01_auth.md 5章）。
+     *
+     * <p>他の端末のログインを切るため全リフレッシュトークンを失効させ、操作中の端末には新しいトークンを発行する。 （他の端末のアクセストークンは JWT
+     * のため、有効期限の15分までは使える。）
+     */
+    @Transactional
+    public AuthResult changePassword(long userId, PasswordChangeRequest request) {
+        User user =
+                userRepository
+                        .findById(userId)
+                        .orElseThrow(() -> new UnauthorizedException("UNAUTHORIZED", "ログインが必要です"));
+        if (!passwordEncoder.matches(request.currentPassword(), user.getPasswordHash())) {
+            log.info("Password change rejected: wrong current password userId={}", userId);
+            throw new BadRequestException(INVALID_CURRENT_PASSWORD, "現在のパスワードが正しくありません");
+        }
+        if (passwordEncoder.matches(request.newPassword(), user.getPasswordHash())) {
+            throw new BadRequestException(PASSWORD_UNCHANGED, "新しいパスワードが現在のパスワードと同じです");
+        }
+        user.changePasswordHash(passwordEncoder.encode(request.newPassword()));
+        refreshTokenService.revokeAll(userId);
+        log.info("Password changed userId={}", userId);
+        return issueTokens(user);
     }
 
     private AuthResult issueTokens(User user) {

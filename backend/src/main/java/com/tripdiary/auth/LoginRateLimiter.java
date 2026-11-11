@@ -45,6 +45,15 @@ public class LoginRateLimiter {
      * @throws TooManyRequestsException 上限超過
      */
     public void check(String key) {
+        check(key, "ログインの試行回数が多すぎます。しばらく時間をおいてお試しください");
+    }
+
+    /**
+     * 試行を1回記録し、上限を超えていれば指定のメッセージで例外を投げる（ログイン以外のパスワード照合にも使う）。
+     *
+     * @param key 制限の単位（例: クライアント IP、{@code password-change:{userId}}）
+     */
+    public void check(String key, String message) {
         Instant now = clock.instant();
         if (windows.size() > CLEANUP_THRESHOLD) {
             windows.values().removeIf(w -> isExpired(w, now));
@@ -57,8 +66,8 @@ public class LoginRateLimiter {
                                         ? new Window(now, 1)
                                         : new Window(w.start(), w.count() + 1));
         if (current.count() > maxAttempts) {
-            log.warn("Login rate limit exceeded attempts={}", current.count());
-            throw new TooManyRequestsException("ログインの試行回数が多すぎます。しばらく時間をおいてお試しください");
+            log.warn("Rate limit exceeded attempts={}", current.count());
+            throw new TooManyRequestsException(message);
         }
     }
 
