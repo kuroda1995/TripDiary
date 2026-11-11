@@ -1,0 +1,15 @@
+# 負荷テスト用（docs/qa_test_plan.md 6章）。local と組み合わせて使う。本番では使わないこと。
+# 起動: java -jar backend.jar --spring.profiles.active=local,perf
+app:
+  auth:
+    login-rate-limit:
+      # k6 は1台（同じ IP）から大量にログインするため、ログインのレート制限を事実上外す
+      max-attempts: 100000000
+  jwt:
+    # シナリオ（最長15分）の途中でアクセストークンが切れないようにする（トークン更新は測定対象外）
+    access-token-ttl: 2h
+
+logging:
+  level:
+    # local の DEBUG ログは測定値を歪めるため INFO に戻す（アクセスログは INFO で出る）
+    com.tripdiary: INFO

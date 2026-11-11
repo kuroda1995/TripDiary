@@ -1,0 +1,138 @@
+# 負荷テスト（k6）。docs/qa_test_plan.md 6章 / docs/rules.md 7章。
+#
+# !! workflow_dispatch（手動実行）のみ。push / pull_request / schedule トリガーを追加しないこと !!
+#    全機能完成時に1回だけ実施する（トークン消費・マシン負荷が大きいため）。
+#
+# staging 環境ができるまでは、GitHub Actions のマシン1台の上で DB・バックエンド・k6 をまとめて動かす。
+# 本番と同じ性能値ではなく、遅い API・重いクエリを見つけるための基準値として扱う。
+name: 負荷テスト（k6）
+
+on:
+  workflow_dispatch:
+    inputs:
+      scenario:
+        description: 実行するシナリオ（all は5シナリオを順番に、約52分）
+        type: choice
+        default: all
+        options: [all, latest, search, detail, login, mixed]
+      smoke:
+        description: 動作確認（各シナリオ 2 VU・30秒）
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: perf
+  cancel-in-progress: false
+
+env:
+  K6_VERSION: v1.0.0
+
+jobs:
+  load-test:
+    name: 負荷テスト（${{ inputs.scenario }}${{ inputs.smoke && '・SMOKE' || '' }}）
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    services:
+      # 写真は使わないが、アプリの設定が S3 の接続先を前提にしているため E2E と同じく起動する
+      s3:
+        image: adobe/s3mock:5.2.3
+        env:
+          COM_ADOBE_TESTING_S3MOCK_STORE_INITIAL_BUCKETS: tripdiary-photos
+        ports:
+          - 9090:9090
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@v5
+
+      # 重いクエリを調べるため pg_stat_statements を有効にして起動する（services では起動オプションを渡せない）
+      - name: PostgreSQL を起動
+        run: |
+          docker run -d --name db -p 5432:5432 \
+            -e POSTGRES_DB=tripdiary -e POSTGRES_USER=tripdiary -e POSTGRES_PASSWORD=tripdiary \
+            postgres:16-alpine -c shared_preload_libraries=pg_stat_statements -c pg_stat_statements.track=top
+          for i in $(seq 1 30); do
+            docker exec db pg_isready -U tripdiary -d tripdiary && exit 0
+            sleep 2
+          done
+          exit 1
+
+      - name: バックエンドをビルド
+        working-directory: backend
+        run: ./gradlew bootJar --console=plain
+      - name: バックエンドを起動（local + perf プロファイル）
+        working-directory: backend
+        run: |
+          nohup java -jar build/libs/backend-0.0.1-SNAPSHOT.jar --spring.profiles.active=local,perf > backend.log 2>&1 &
+          for i in $(seq 1 60); do
+            if curl -fsS http://localhost:8080/actuator/health | grep -q '"UP"'; then
+              echo "backend is up"; exit 0
+            fi
+            sleep 2
+          done
+          echo "backend did not start"; cat backend.log; exit 1
+
+      - name: シードデータを投入
+        run: docker exec -i db psql -U tripdiary -d tripdiary -v ON_ERROR_STOP=1 < perf/seed.sql
+
+      - name: クエリの統計をリセット
+        run: |
+          docker exec db psql -U tripdiary -d tripdiary -c "CREATE EXTENSION IF NOT EXISTS pg_stat_statements" \
+            -c "SELECT pg_stat_statements_reset()"
+
+      - name: k6 をインストール
+        run: |
+          curl -fsSL "https://github.com/grafana/k6/releases/download/${K6_VERSION}/k6-${K6_VERSION}-linux-amd64.tar.gz" \
+            | tar xz --strip-components=1 -C /usr/local/bin "k6-${K6_VERSION}-linux-amd64/k6"
+          k6 version
+
+      - name: 負荷テストを実行
+        working-directory: perf/k6
+        run: |
+          # マシンの CPU・メモリの使用状況を15秒ごとに記録する
+          nohup vmstat -t 15 > vmstat.log 2>&1 &
+          k6 run -e SCENARIO=${{ inputs.scenario }} -e SMOKE=${{ inputs.smoke }} load-test.js
+
+      - name: 重いクエリ（合計時間の上位20件）を記録
+        if: always()
+        run: |
+          docker exec db psql -U tripdiary -d tripdiary -P pager=off -c "
+            SELECT calls,
+                   round(total_exec_time::numeric, 0) AS total_ms,
+                   round(mean_exec_time::numeric, 2) AS mean_ms,
+                   round(max_exec_time::numeric, 2) AS max_ms,
+                   rows,
+                   left(regexp_replace(query, '\s+', ' ', 'g'), 300) AS query
+            FROM pg_stat_statements
+            WHERE dbid = (SELECT oid FROM pg_database WHERE datname = 'tripdiary')
+            ORDER BY total_exec_time DESC
+            LIMIT 20" > perf/k6/slow-queries.txt
+          cat perf/k6/slow-queries.txt
+
+      - name: 結果をジョブのサマリーに出す
+        if: always()
+        run: |
+          if [ -f perf/k6/summary.md ]; then cat perf/k6/summary.md >> "$GITHUB_STEP_SUMMARY"; fi
+          echo '### 重いクエリ（上位20件）' >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          head -c 60000 perf/k6/slow-queries.txt >> "$GITHUB_STEP_SUMMARY" || true
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+
+      - name: 結果・ログを保存
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: perf-results-${{ inputs.scenario }}${{ inputs.smoke && '-smoke' || '' }}
+          path: |
+            perf/k6/summary.md
+            perf/k6/summary.json
+            perf/k6/slow-queries.txt
+            perf/k6/vmstat.log
+            backend/backend.log
+          retention-days: 30
