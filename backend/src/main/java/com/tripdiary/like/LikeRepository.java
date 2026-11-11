@@ -1,11 +1,7 @@
 package com.tripdiary.like;
 
-import com.tripdiary.spot.SpotReactionReader;
-import com.tripdiary.spot.SpotReactions;
 import java.sql.Timestamp;
 import java.time.Instant;
-import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
@@ -16,14 +12,12 @@ import org.springframework.stereotype.Repository;
 /**
  * 行ってみたい！（{@code spot_likes}）の読み書き。
  *
- * <p>主キー {@code (user_id, spot_id)} だけのテーブルのため、JPA のエンティティにせず SQL で扱う。
+ * <p>主キー {@code (user_id, spot_id)} だけのテーブルのため、JPA のエンティティにせず SQL で扱う。 一覧・詳細に出す件数は {@link
+ * com.tripdiary.spot.JdbcSpotReactionReader} がまとめて読む。
  */
 @Repository
 @RequiredArgsConstructor
-public class LikeRepository implements SpotReactionReader {
-
-    /** 閲覧者がいない場合に、どのユーザーにも一致しない値として使う。 */
-    private static final long NO_VIEWER = -1;
+public class LikeRepository {
 
     private final NamedParameterJdbcTemplate jdbc;
 
@@ -49,27 +43,6 @@ public class LikeRepository implements SpotReactionReader {
                         Map.of("spotId", spotId),
                         Long.class);
         return count == null ? 0 : count;
-    }
-
-    /** 件数と閲覧者が付けたかを、スポットの数に関係なく1回の SQL でまとめて取得する。 */
-    @Override
-    public Map<Long, SpotReactions> read(Collection<Long> spotIds, Long viewerId) {
-        Map<Long, SpotReactions> result = new HashMap<>();
-        if (spotIds.isEmpty()) {
-            return result;
-        }
-        jdbc.query(
-                "SELECT spot_id, count(*) AS like_count, bool_or(user_id = :viewerId) AS liked"
-                        + " FROM spot_likes WHERE spot_id IN (:spotIds) GROUP BY spot_id",
-                new MapSqlParameterSource()
-                        .addValue("spotIds", spotIds)
-                        .addValue("viewerId", viewerId == null ? NO_VIEWER : viewerId),
-                rs -> {
-                    result.put(
-                            rs.getLong("spot_id"),
-                            new SpotReactions(rs.getLong("like_count"), rs.getBoolean("liked")));
-                });
-        return result;
     }
 
     /** 自分が付けたスポット（付けた日時）。 */

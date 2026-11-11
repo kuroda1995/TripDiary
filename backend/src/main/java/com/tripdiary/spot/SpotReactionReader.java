@@ -4,16 +4,16 @@ import java.util.Collection;
 import java.util.Map;
 
 /**
- * スポットへの反応をまとめて読む（実装は like パッケージ）。
+ * スポットへの反応（行ってみたい！・コメント）をまとめて読む。
  *
- * <p>spot パッケージが like パッケージに依存しないよう、インターフェースをこちらに置く。 一覧では件数に比例しない回数（1回）で取得すること。
+ * <p>一覧では件数に比例しない回数（1回）で取得すること（実装: {@link JdbcSpotReactionReader}）。
  */
 public interface SpotReactionReader {
 
     /**
      * @param spotIds 対象のスポット
      * @param viewerId 閲覧者（未ログインなら null）
-     * @return スポット ID ごとの反応（反応が無いスポットは含めなくてよい。呼び出し側で {@link SpotReactions#NONE} とする）
+     * @return スポット ID ごとの反応（含まれないスポットは呼び出し側で {@link SpotReactions#NONE} とする）
      */
     Map<Long, SpotReactions> read(Collection<Long> spotIds, Long viewerId);
 }
