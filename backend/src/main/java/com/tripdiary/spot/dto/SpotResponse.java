@@ -4,6 +4,7 @@ import com.tripdiary.area.dto.AreaTagSummary;
 import com.tripdiary.spot.Spot;
 import com.tripdiary.spot.SpotPhoto;
 import com.tripdiary.spot.SpotReactions;
+import com.tripdiary.spot.SpotStatus;
 import com.tripdiary.spot.Visibility;
 import com.tripdiary.user.dto.UserResponse;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -28,6 +29,8 @@ public record SpotResponse(
         @Schema(description = "行ってみたい！の件数", example = "12") long likeCount,
         @Schema(description = "閲覧者が行ってみたい！を付けているか（未ログインは false）") boolean likedByMe,
         @Schema(description = "コメントの件数", example = "3") long commentCount,
+        @Schema(description = "閲覧者が付けたステータス（未設定・未ログインは null。本人だけに返る）", nullable = true)
+                SpotStatus myStatus,
         Instant createdAt,
         Instant updatedAt) {
 
@@ -52,6 +55,7 @@ public record SpotResponse(
                 reactions.likeCount(),
                 reactions.likedByMe(),
                 reactions.commentCount(),
+                reactions.myStatus(),
                 spot.getCreatedAt(),
                 spot.getUpdatedAt());
     }
