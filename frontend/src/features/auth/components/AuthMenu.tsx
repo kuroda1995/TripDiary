@@ -39,6 +39,9 @@ export function AuthMenu() {
 
   return (
     <nav aria-label="アカウント" className="flex items-center gap-2">
+      <Link to="/timeline" className={buttonVariants({ variant: 'ghost', size: 'sm' })}>
+        タイムライン
+      </Link>
       <Link to="/spots/new" className={buttonVariants({ size: 'sm' })}>
         投稿する
       </Link>
