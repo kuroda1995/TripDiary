@@ -4,6 +4,7 @@ import { UserAvatar } from '@/components/UserAvatar'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { LikeButton } from '@/features/likes/components/LikeButton'
+import { StatusSelect } from '@/features/status/components/StatusSelect'
 import { formatDate } from '@/lib/date'
 import type { SpotSummary } from '../types'
 import { AreaTagBadges } from './AreaTagBadges'
@@ -49,8 +50,9 @@ export function SpotCard({ spot }: { spot: SpotSummary }) {
           </Link>
           {spot.visitedOn && <span> ・ {formatDate(spot.visitedOn)}に訪問</span>}
         </p>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <LikeButton spotId={spot.id} liked={spot.likedByMe} likeCount={spot.likeCount} />
+          <StatusSelect spotId={spot.id} status={spot.myStatus} />
           <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
             <MessageCircle aria-hidden className="size-4" />
             コメント {spot.commentCount}件

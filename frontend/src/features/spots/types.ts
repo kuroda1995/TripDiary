@@ -2,6 +2,9 @@ import type { AreaTag } from '@/features/areas/types'
 
 export type Visibility = 'PUBLIC' | 'PRIVATE'
 
+/** 自分用リストのステータス（docs/features/08_spot_status.md）。 */
+export type SpotStatus = 'VISITED' | 'WANT_TO_GO'
+
 export type Author = {
   id: number
   username: string
@@ -30,6 +33,8 @@ export type Spot = {
   likeCount: number
   likedByMe: boolean
   commentCount: number
+  /** 閲覧者が付けたステータス（未設定・未ログインは null。本人にだけ返る） */
+  myStatus: SpotStatus | null
   createdAt: string
   updatedAt: string
 }
@@ -48,6 +53,8 @@ export type SpotSummary = {
   likeCount: number
   likedByMe: boolean
   commentCount: number
+  /** 閲覧者が付けたステータス（未設定・未ログインは null。本人にだけ返る） */
+  myStatus: SpotStatus | null
   createdAt: string
 }
 

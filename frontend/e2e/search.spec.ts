@@ -76,6 +76,8 @@ test('地方全体・キーワードで絞り込め、条件は URL に残り、
   // スポット詳細のエリアタグから、そのタグで検索した結果へ
   await page.goto('/')
   await page.getByRole('link', { name: fukuoka }).click()
+  // 詳細画面に移ってから押す（トップの他のカードにも同じタグがあるため）
+  await expect(page.getByRole('heading', { level: 1, name: fukuoka })).toBeVisible()
   await page.getByRole('link', { name: '福岡のスポットを探す' }).click()
   await expect(page).toHaveURL(/\/search\?areas=fukuoka$/)
   await expect(page.getByRole('link', { name: fukuoka })).toBeVisible()

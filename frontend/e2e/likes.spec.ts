@@ -49,8 +49,9 @@ test('他のユーザーの投稿に行ってみたい！を付けると件数�
   await other.reload()
   await expect(other.getByRole('button', { name: /行ってみたい！/ })).toHaveAttribute('aria-pressed', 'true')
 
-  // マイページの「行ってみたい！した投稿」に出る
+  // マイページの「行ってみたい！した投稿」タブに出る
   await other.goto('/me')
+  await other.getByRole('tab', { name: '行ってみたい！した投稿' }).click()
   const myLikes = other.getByRole('list', { name: '行ってみたい！した投稿' })
   await expect(myLikes.getByRole('link', { name: title })).toBeVisible()
 

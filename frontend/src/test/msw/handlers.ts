@@ -61,6 +61,7 @@ export function spotFixture(overrides: Record<string, unknown> = {}) {
     photos: [],
     likeCount: 0,
     likedByMe: false,
+    myStatus: null,
     commentCount: 0,
     author: {
       id: meFixture.id,
@@ -153,6 +154,8 @@ export const defaultHandlers = [
   http.get('/api/v1/areas', () => HttpResponse.json(areasFixture)),
   http.get('/api/v1/spots', () => HttpResponse.json({ items: [], nextCursor: null })),
   http.get('/api/v1/me/likes', () => HttpResponse.json({ items: [], nextCursor: null })),
+  http.get('/api/v1/me/spot-statuses', () => HttpResponse.json({ items: [], nextCursor: null })),
+  http.get('/api/v1/me/spot-statuses/summary', () => HttpResponse.json({ visited: 0, wantToGo: 0 })),
   http.get('/api/v1/spots/:id/comments', () => HttpResponse.json({ items: [], nextCursor: null })),
   http.get('/api/v1/users/:username/spots', () => HttpResponse.json({ items: [], nextCursor: null })),
   http.get('/api/v1/users/:username', ({ params }) => {

@@ -19,8 +19,8 @@ TripDiary の中心となる機能です。ユーザーは訪れた（または�
 | 作成・詳細・編集・削除・新着一覧・ユーザー別一覧・公開範囲（SPOT-01〜07） | 実装済み |
 | 写真（`photos`・カバー写真 `coverPhotoUrl`） | 実装済み（[03_photo_upload.md](03_photo_upload.md)） |
 | 「行ってみたい！」数・`likedByMe`・コメント数 | 実装済み（[04_like.md](04_like.md) / [05_comment.md](05_comment.md)） |
-| `myStatus` | ステータス管理機能（[08](08_spot_status.md)）で追加 |
-| 一覧の検索条件・並び替え（`areaIds` / `q` / `sort`） | エリア検索機能（[07_area_search.md](07_area_search.md)）で追加 |
+| `myStatus` | 実装済み（[08_spot_status.md](08_spot_status.md)） |
+| 一覧の検索条件・並び替え（`areaIds` / `q` / `sort`） | 実装済み（[07_area_search.md](07_area_search.md)） |
 
 以下の API 例のうち、未実装の項目には「（未実装）」と記載しています。
 
@@ -110,8 +110,8 @@ TripDiary の中心となる機能です。ユーザーは訪れた（または�
 
 - `areaTags` は表示順（地方 → 都道府県、各階層の並び順）で返します。
 - `photos` は表示順（先頭がカバー写真）で返します。写真は全スポットで一意な `s3Key` で識別し、編集時はそのまま `photos[].s3Key` として送り返します（写真の ID は返しません）。
-- `myStatus` はステータス管理機能で追加します（未実装）。一覧（4.3）にも `likeCount` / `likedByMe` / `commentCount` を含めます。
-- `likedByMe` / `myStatus` は未ログイン時は `false` / `null` を返します。
+- `myStatus` は閲覧者本人が付けたステータス（`VISITED` / `WANT_TO_GO`、未設定は `null`。[08_spot_status.md](08_spot_status.md)）です。一覧（4.3）にも `likeCount` / `likedByMe` / `commentCount` / `myStatus` を含めます（`spot.JdbcSpotReactionReader` が1回の SQL でまとめて取得）。
+- `likedByMe` / `myStatus` は未ログイン時は `false` / `null` を返します。他のユーザーのステータスは返しません。
 
 ### 4.3 一覧 `GET /spots`
 

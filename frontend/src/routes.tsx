@@ -10,6 +10,7 @@ import { TimelinePage } from '@/features/follow/pages/TimelinePage'
 import { UserProfilePage } from '@/features/follow/pages/UserProfilePage'
 import { HomePage } from '@/features/home/pages/HomePage'
 import { SearchPage } from '@/features/search/pages/SearchPage'
+import { MyListsRedirect } from '@/features/status/pages/MyListsRedirect'
 import { PasswordSettingsPage } from '@/features/settings/pages/PasswordSettingsPage'
 import { ProfileSettingsPage } from '@/features/settings/pages/ProfileSettingsPage'
 import { SpotDetailPage } from '@/features/spots/pages/SpotDetailPage'
@@ -39,6 +40,7 @@ export const routes: RouteObject[] = [
         element: <RequireAuth />,
         children: [
           { path: 'me', element: <MyPage /> },
+          { path: 'me/lists', element: <MyListsRedirect /> },
           { path: 'timeline', element: <TimelinePage /> },
           { path: 'settings/profile', element: <ProfileSettingsPage /> },
           { path: 'settings/password', element: <PasswordSettingsPage /> },
