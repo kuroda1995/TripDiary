@@ -9,6 +9,7 @@ import { FollowListPage } from '@/features/follow/pages/FollowListPage'
 import { TimelinePage } from '@/features/follow/pages/TimelinePage'
 import { UserProfilePage } from '@/features/follow/pages/UserProfilePage'
 import { HomePage } from '@/features/home/pages/HomePage'
+import { SearchPage } from '@/features/search/pages/SearchPage'
 import { PasswordSettingsPage } from '@/features/settings/pages/PasswordSettingsPage'
 import { ProfileSettingsPage } from '@/features/settings/pages/ProfileSettingsPage'
 import { SpotDetailPage } from '@/features/spots/pages/SpotDetailPage'
@@ -22,6 +23,7 @@ export const routes: RouteObject[] = [
     element: <RootLayout />,
     children: [
       { index: true, element: <HomePage /> },
+      { path: 'search', element: <SearchPage /> },
       { path: 'spots/:id', element: <SpotDetailPage /> },
       { path: 'users/:username', element: <UserProfilePage /> },
       { path: 'users/:username/following', element: <FollowListPage kind="following" /> },

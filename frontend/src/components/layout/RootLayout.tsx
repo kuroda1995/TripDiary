@@ -1,4 +1,6 @@
+import { Search } from 'lucide-react'
 import { Link, Outlet } from 'react-router'
+import { buttonVariants } from '@/components/ui/button'
 import { Toaster } from 'sonner'
 import { AuthProvider } from '@/features/auth/AuthProvider'
 import { AuthMenu } from '@/features/auth/components/AuthMenu'
@@ -10,9 +12,15 @@ export function RootLayout() {
       <div className="flex min-h-svh flex-col bg-background">
         <header className="border-b">
           <div className="mx-auto flex h-14 w-full max-w-5xl items-center justify-between px-4">
-            <Link to="/" className="text-lg font-bold">
-              TripDiary
-            </Link>
+            <div className="flex items-center gap-2">
+              <Link to="/" className="text-lg font-bold">
+                TripDiary
+              </Link>
+              <Link to="/search" className={buttonVariants({ variant: 'ghost', size: 'sm' })}>
+                <Search aria-hidden />
+                探す
+              </Link>
+            </div>
             <AuthMenu />
           </div>
         </header>

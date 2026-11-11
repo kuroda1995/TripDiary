@@ -11,6 +11,8 @@ import com.tripdiary.photo.PhotoStorage.StoredObject;
 import com.tripdiary.photo.UploadPurpose;
 import com.tripdiary.spot.Spot.NewPhoto;
 import com.tripdiary.spot.Spot.SpotContent;
+import com.tripdiary.spot.SpotSearchRepository.Criteria;
+import com.tripdiary.spot.SpotSearchRepository.Hit;
 import com.tripdiary.spot.dto.PhotoRequest;
 import com.tripdiary.spot.dto.SpotPageResponse;
 import com.tripdiary.spot.dto.SpotRequest;
@@ -62,6 +64,7 @@ public class SpotService {
     private final PhotoStorage photoStorage;
     private final ApplicationEventPublisher eventPublisher;
     private final SpotReactionReader reactionReader;
+    private final SpotSearchRepository spotSearchRepository;
     private final Clock clock;
 
     @Transactional
@@ -132,6 +135,55 @@ public class SpotService {
                                 cursor,
                                 c -> spotRepository.findPublicAfter(c.createdAt(), c.id(), page));
         return toPage(spots, limit, viewerId);
+    }
+
+    /**
+     * 公開スポットの検索（docs/features/07_area_search.md）。エリアタグ（子孫タグを含む・OR）とキーワードは AND 条件。
+     *
+     * <p>条件なしの新着順は {@link #listPublic} と同じ結果になる。
+     *
+     * @param areaTagIds 指定されたエリアタグ（空なら絞り込まない）
+     * @param keyword キーワード（null・空白のみなら絞り込まない）
+     */
+    @Transactional(readOnly = true)
+    public SpotPageResponse search(
+            List<Long> areaTagIds,
+            String keyword,
+            SpotSort sort,
+            Long viewerId,
+            String cursor,
+            int limit) {
+        String trimmed = keyword == null || keyword.isBlank() ? null : keyword.strip();
+        if (areaTagIds.isEmpty() && trimmed == null && sort == SpotSort.NEWEST) {
+            return listPublic(viewerId, cursor, limit);
+        }
+        Set<Long> tagIds =
+                areaTagIds.isEmpty() ? Set.of() : areaTagService.expandWithDescendants(areaTagIds);
+        Hit after = cursor == null ? null : decodeCursor(cursor, sort);
+
+        List<Hit> hits =
+                spotSearchRepository.search(new Criteria(tagIds, trimmed, sort), after, limit + 1);
+        boolean hasNext = hits.size() > limit;
+        List<Hit> pageItems = hasNext ? hits.subList(0, limit) : hits;
+        String nextCursor =
+                hasNext ? encodeCursor(pageItems.get(pageItems.size() - 1), sort) : null;
+        return new SpotPageResponse(
+                summariesInOrder(pageItems.stream().map(Hit::id).toList(), viewerId), nextCursor);
+    }
+
+    private static Hit decodeCursor(String cursor, SpotSort sort) {
+        if (sort == SpotSort.POPULAR) {
+            PopularSpotCursor c = PopularSpotCursor.decode(cursor);
+            return new Hit(c.id(), c.createdAt(), c.likeCount());
+        }
+        SpotCursor c = SpotCursor.decode(cursor);
+        return new Hit(c.id(), c.createdAt(), 0);
+    }
+
+    private static String encodeCursor(Hit last, SpotSort sort) {
+        return sort == SpotSort.POPULAR
+                ? new PopularSpotCursor(last.likeCount(), last.createdAt(), last.id()).encode()
+                : new SpotCursor(last.createdAt(), last.id()).encode();
     }
 
     /** ユーザー別一覧。本人が見る場合は非公開スポットも含める。 */
