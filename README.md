@@ -63,6 +63,7 @@ flowchart LR
 | [DB 設計書](docs/database_schema.md) | テーブル定義・制約・インデックス・DDL |
 | [ER 図](docs/er_diagram.md) | Mermaid による ER 図 |
 | [品質チェック・テスト計画書](docs/qa_test_plan.md) | テスト方針・観点・カバレッジ目標・負荷テスト計画 |
+| [負荷テスト結果報告書](docs/perf_test_report.md) | 負荷テストの結果（2026-11-11、全シナリオ合格）と所見 |
 | [開発ルール規約](docs/rules.md) | Git 運用・コーディング・API・ログ・テスト規約 |
 
 ### 機能別ドキュメント
