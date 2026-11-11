@@ -17,4 +17,16 @@ public interface RefreshTokenRepository extends JpaRepository<RefreshToken, Long
             "update RefreshToken t set t.revokedAt = :now"
                     + " where t.user.id = :userId and t.revokedAt is null")
     int revokeAllByUserId(@Param("userId") long userId, @Param("now") Instant now);
+
+    /**
+     * ユーザーのトークンのうち、{@code since} 以降にローテーションで使用済みになったもの（猶予期間中で、まだ再利用できるもの）を失効させる。
+     * ログアウト後に古いトークンで再びログインできないようにする。
+     */
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
+    @Query(
+            "update RefreshToken t set t.revokedAt = :now"
+                    + " where t.user.id = :userId and t.revokedAt is null"
+                    + " and t.rotatedAt is not null and t.rotatedAt >= :since")
+    int revokeRecentlyRotated(
+            @Param("userId") long userId, @Param("since") Instant since, @Param("now") Instant now);
 }

@@ -23,7 +23,8 @@ class AccessTokenServiceTest {
                         issuer,
                         Duration.ofMinutes(15),
                         Duration.ofDays(14),
-                        true);
+                        true,
+                        null);
         SecretKey key = config.jwtSecretKey(props);
         return new AccessTokenService(
                 config.jwtEncoder(key), config.jwtDecoder(key, props), props, clock);

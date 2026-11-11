@@ -14,7 +14,7 @@ class JwtPropertiesTest {
 
     private static JwtProperties props(String secret) {
         return new JwtProperties(
-                secret, "tripdiary-api", Duration.ofMinutes(15), Duration.ofDays(14), true);
+                secret, "tripdiary-api", Duration.ofMinutes(15), Duration.ofDays(14), true, null);
     }
 
     @Test
@@ -47,7 +47,8 @@ class JwtPropertiesTest {
                                         "iss",
                                         Duration.ZERO,
                                         Duration.ofDays(14),
-                                        true))
+                                        true,
+                                        null))
                 .isInstanceOf(IllegalArgumentException.class);
         assertThatThrownBy(
                         () ->
@@ -56,7 +57,34 @@ class JwtPropertiesTest {
                                         "iss",
                                         Duration.ofMinutes(15),
                                         Duration.ofDays(-1),
-                                        true))
+                                        true,
+                                        null))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    @DisplayName("リフレッシュトークンの再利用猶予は省略すると30秒、0 は可、負の値はエラー")
+    void refreshReuseGrace() {
+        assertThat(props(VALID_SECRET).refreshReuseGrace()).isEqualTo(Duration.ofSeconds(30));
+        assertThat(
+                        new JwtProperties(
+                                        VALID_SECRET,
+                                        "iss",
+                                        Duration.ofMinutes(15),
+                                        Duration.ofDays(14),
+                                        true,
+                                        Duration.ZERO)
+                                .refreshReuseGrace())
+                .isZero();
+        assertThatThrownBy(
+                        () ->
+                                new JwtProperties(
+                                        VALID_SECRET,
+                                        "iss",
+                                        Duration.ofMinutes(15),
+                                        Duration.ofDays(14),
+                                        true,
+                                        Duration.ofSeconds(-1)))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 

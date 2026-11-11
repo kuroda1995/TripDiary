@@ -37,8 +37,13 @@ public class RefreshToken {
     @Column(name = "expires_at", nullable = false)
     private Instant expiresAt;
 
+    /** ログアウト・パスワード変更・再利用検知などで失効させた日時。失効後は使えない。 */
     @Column(name = "revoked_at")
     private Instant revokedAt;
+
+    /** ローテーション（新しいトークンへの交換）で使用済みにした日時。直後の猶予期間だけは再利用を許す。 */
+    @Column(name = "rotated_at")
+    private Instant rotatedAt;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
@@ -56,6 +61,17 @@ public class RefreshToken {
 
     public boolean isExpired(Instant now) {
         return !now.isBefore(expiresAt);
+    }
+
+    public boolean isRotated() {
+        return rotatedAt != null;
+    }
+
+    /** ローテーションで使用済みにする（最初の1回の日時を保つ）。 */
+    public void markRotated(Instant now) {
+        if (rotatedAt == null) {
+            rotatedAt = now;
+        }
     }
 
     public void revoke(Instant now) {
