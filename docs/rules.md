@@ -231,7 +231,7 @@ gitGraph
 
 - CI は GitHub Actions を使用する。
 - `ci.yml`: `pull_request` / `push` で Lint・単体テスト・結合テスト・E2E テストを自動実行する。
-- `perf.yml`（負荷テスト）: **`workflow_dispatch` のみ。** `push` / `pull_request` / `schedule` トリガーの追加を禁止する。全機能完成時に1回のみ実施する。
+- `perf.yml`（負荷テスト）: **`workflow_dispatch` のみ。** `push` / `pull_request` / `schedule` トリガーの追加を禁止する。全機能完成時に1回のみ実施する。手順は [perf/README.md](../perf/README.md)。
 - CI が失敗したら、原因を修正してから再 push する。CI を無効化・スキップ（`[skip ci]` 等）して回避しない。
 
 ---
