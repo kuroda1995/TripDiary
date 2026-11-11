@@ -5,7 +5,6 @@ import com.tripdiary.auth.dto.AuthResponse;
 import com.tripdiary.auth.dto.LoginRequest;
 import com.tripdiary.auth.dto.SignupRequest;
 import com.tripdiary.common.exception.ErrorResponse;
-import com.tripdiary.user.dto.MeResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -33,6 +32,7 @@ public class AuthController {
     private final AuthService authService;
     private final LoginRateLimiter loginRateLimiter;
     private final RefreshTokenCookies cookies;
+    private final AuthResponses authResponses;
 
     @Operation(summary = "新規登録", description = "登録と同時にログイン状態にする。リフレッシュトークンは Cookie で返す。")
     @ApiResponse(responseCode = "201", description = "登録成功")
@@ -92,16 +92,6 @@ public class AuthController {
     }
 
     private ResponseEntity<AuthResponse> respond(HttpStatus status, AuthResult result) {
-        return ResponseEntity.status(status)
-                .header(
-                        HttpHeaders.SET_COOKIE,
-                        cookies.create(result.refreshToken().value(), result.refreshToken().ttl())
-                                .toString())
-                .header(HttpHeaders.CACHE_CONTROL, "no-store")
-                .body(
-                        AuthResponse.bearer(
-                                result.accessToken().value(),
-                                result.accessToken().expiresInSeconds(),
-                                MeResponse.from(result.user())));
+        return authResponses.of(status, result);
     }
 }

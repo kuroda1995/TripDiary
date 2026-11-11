@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import { onSessionExpired } from '@/lib/authSession'
 import * as authApi from './api'
 import { AuthContext, type AuthContextValue, type AuthState } from './AuthContext'
-import type { LoginInput, SignupInput } from './types'
+import type { LoginInput, Me, SignupInput } from './types'
 
 /**
  * ログイン状態を管理する。
@@ -66,9 +66,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [queryClient])
 
+  const updateUser = useCallback(
+    (user: Me) => {
+      setState({ status: 'authenticated', user })
+      // 表示名・アイコンは投稿者として一覧・詳細にも出るため、取得済みのデータを古い扱いにする
+      void queryClient.invalidateQueries()
+    },
+    [queryClient],
+  )
+
   const value = useMemo<AuthContextValue>(
-    () => ({ ...state, login, signup, logout }),
-    [state, login, signup, logout],
+    () => ({ ...state, login, signup, logout, updateUser }),
+    [state, login, signup, logout, updateUser],
   )
 
   return <AuthContext value={value}>{children}</AuthContext>

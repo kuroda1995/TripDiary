@@ -3,8 +3,10 @@ package com.tripdiary.auth;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -13,7 +15,9 @@ import static org.mockito.Mockito.when;
 import com.tripdiary.auth.AccessTokenService.IssuedAccessToken;
 import com.tripdiary.auth.RefreshTokenService.IssuedRefreshToken;
 import com.tripdiary.auth.dto.LoginRequest;
+import com.tripdiary.auth.dto.PasswordChangeRequest;
 import com.tripdiary.auth.dto.SignupRequest;
+import com.tripdiary.common.exception.BadRequestException;
 import com.tripdiary.common.exception.ConflictException;
 import com.tripdiary.common.exception.UnauthorizedException;
 import com.tripdiary.support.TestUsers;
@@ -23,8 +27,10 @@ import java.time.Duration;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.mockito.InOrder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 class AuthServiceTest {
@@ -142,6 +148,69 @@ class AuthServiceTest {
         service.logout("raw");
 
         verify(refreshTokenService).revoke("raw");
+    }
+
+    @Nested
+    @DisplayName("パスワード変更")
+    class ChangePassword {
+
+        private final User user = TestUsers.user(1L, "taro"); // passwordHash = "hashed"
+
+        @BeforeEach
+        void setUp() {
+            when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+            when(passwordEncoder.matches("Current123", "hashed")).thenReturn(true);
+        }
+
+        @Test
+        @DisplayName("現在のパスワードが合えば新しいハッシュを保存し、全リフレッシュトークンを失効させてから新しいトークンを発行する")
+        void changesPasswordAndReissuesTokens() {
+            AuthService.AuthResult result =
+                    service.changePassword(
+                            1L, new PasswordChangeRequest("Current123", "NewPass456"));
+
+            assertThat(user.getPasswordHash()).isEqualTo("hashed:NewPass456");
+            InOrder order = inOrder(refreshTokenService);
+            order.verify(refreshTokenService).revokeAll(1L);
+            order.verify(refreshTokenService).issue(user);
+            assertThat(result.accessToken().value()).isEqualTo("access");
+        }
+
+        @Test
+        @DisplayName("現在のパスワードが違えば INVALID_CURRENT_PASSWORD で、何も変えない")
+        void rejectsWrongCurrentPassword() {
+            assertThatThrownBy(
+                            () ->
+                                    service.changePassword(
+                                            1L,
+                                            new PasswordChangeRequest("Wrong123", "NewPass456")))
+                    .isInstanceOf(BadRequestException.class)
+                    .extracting("code")
+                    .isEqualTo(AuthService.INVALID_CURRENT_PASSWORD);
+            assertThat(user.getPasswordHash()).isEqualTo("hashed");
+            verify(refreshTokenService, never()).revokeAll(anyLong());
+        }
+
+        @Test
+        @DisplayName("新しいパスワードが現在と同じなら PASSWORD_UNCHANGED")
+        void rejectsSamePassword() {
+            assertThatThrownBy(
+                            () ->
+                                    service.changePassword(
+                                            1L,
+                                            new PasswordChangeRequest("Current123", "Current123")))
+                    .extracting("code")
+                    .isEqualTo(AuthService.PASSWORD_UNCHANGED);
+            verify(refreshTokenService, never()).revokeAll(anyLong());
+        }
+
+        @Test
+        @DisplayName("リクエストの toString にパスワードを含めない")
+        void requestToStringHidesPasswords() {
+            assertThat(new PasswordChangeRequest("Current123", "NewPass456").toString())
+                    .doesNotContain("Current123")
+                    .doesNotContain("NewPass456");
+        }
     }
 
     private void assertInvalidCredentials(LoginRequest request) {

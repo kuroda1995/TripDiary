@@ -43,7 +43,7 @@ public record SpotResponse(
                         .sorted(Comparator.comparingInt(SpotPhoto::getSortOrder))
                         .map(photo -> SpotPhotoResponse.from(photo, photoUrl))
                         .toList(),
-                UserResponse.from(spot.getUser()),
+                UserResponse.from(spot.getUser(), photoUrl),
                 spot.getCreatedAt(),
                 spot.getUpdatedAt());
     }

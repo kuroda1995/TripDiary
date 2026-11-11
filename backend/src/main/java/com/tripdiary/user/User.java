@@ -56,6 +56,30 @@ public class User {
         this.displayName = displayName;
     }
 
+    public void changeDisplayName(String displayName) {
+        this.displayName = displayName;
+    }
+
+    public void changeBio(String bio) {
+        this.bio = bio;
+    }
+
+    /**
+     * アイコンを差し替える。
+     *
+     * @param avatarS3Key 新しいアイコンの S3 キー（null で削除）
+     * @return 差し替え前のキー（なければ null）
+     */
+    public String changeAvatar(String avatarS3Key) {
+        String previous = this.avatarS3Key;
+        this.avatarS3Key = avatarS3Key;
+        return previous;
+    }
+
+    public void changePasswordHash(String passwordHash) {
+        this.passwordHash = passwordHash;
+    }
+
     /** パスワードハッシュをログ等に出さないよう toString は ID とユーザー名のみ。 */
     @Override
     public String toString() {

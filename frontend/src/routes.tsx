@@ -6,6 +6,8 @@ import { LoginPage } from '@/features/auth/pages/LoginPage'
 import { MyPage } from '@/features/auth/pages/MyPage'
 import { SignupPage } from '@/features/auth/pages/SignupPage'
 import { HomePage } from '@/features/home/pages/HomePage'
+import { PasswordSettingsPage } from '@/features/settings/pages/PasswordSettingsPage'
+import { ProfileSettingsPage } from '@/features/settings/pages/ProfileSettingsPage'
 import { SpotDetailPage } from '@/features/spots/pages/SpotDetailPage'
 import { SpotEditPage } from '@/features/spots/pages/SpotEditPage'
 import { SpotNewPage } from '@/features/spots/pages/SpotNewPage'
@@ -31,6 +33,8 @@ export const routes: RouteObject[] = [
         element: <RequireAuth />,
         children: [
           { path: 'me', element: <MyPage /> },
+          { path: 'settings/profile', element: <ProfileSettingsPage /> },
+          { path: 'settings/password', element: <PasswordSettingsPage /> },
           { path: 'spots/new', element: <SpotNewPage /> },
           { path: 'spots/:id/edit', element: <SpotEditPage /> },
         ],

@@ -40,7 +40,7 @@ public record SpotSummaryResponse(
                 spot.getVisitedOn(),
                 spot.getVisibility(),
                 spot.coverPhoto().map(photo -> photoUrl.apply(photo.getS3Key())).orElse(null),
-                UserResponse.from(spot.getUser()),
+                UserResponse.from(spot.getUser(), photoUrl),
                 spot.getCreatedAt());
     }
 
