@@ -12,6 +12,7 @@ import {
   storagePutHandler,
   uploadHandlers,
 } from '@/test/msw/handlers'
+import { imageFile, pngOfSize } from '@/test/images'
 import { server } from '@/test/msw/server'
 import { renderApp } from '@/test/render'
 
@@ -113,7 +114,7 @@ describe('プロフィール編集', () => {
 
     await userEvent.upload(
       await screen.findByLabelText('アイコン画像を選ぶ'),
-      new File([new Uint8Array(10)], 'me.png', { type: 'image/png' }),
+      imageFile('me.png', 'image/png'),
     )
 
     expect(await screen.findByRole('img', { name: 'アイコンのプレビュー' })).toBeInTheDocument()
@@ -135,7 +136,7 @@ describe('プロフィール編集', () => {
 
     await userEvent.upload(
       await screen.findByLabelText('アイコン画像を選ぶ'),
-      new File([new Uint8Array(5 * 1024 * 1024 + 1)], 'big.png', { type: 'image/png' }),
+      imageFile('big.png', 'image/png', pngOfSize(5 * 1024 * 1024 + 1)),
     )
 
     expect(await screen.findByText('画像のサイズは5MBまでです')).toBeInTheDocument()
@@ -149,7 +150,7 @@ describe('プロフィール編集', () => {
 
     await userEvent.upload(
       await screen.findByLabelText('アイコン画像を選ぶ'),
-      new File([new Uint8Array(10)], 'me.png', { type: 'image/png' }),
+      imageFile('me.png', 'image/png'),
     )
 
     expect(await screen.findByText('アップロードに失敗しました')).toBeInTheDocument()

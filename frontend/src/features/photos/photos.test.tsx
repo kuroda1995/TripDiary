@@ -10,6 +10,7 @@ import {
   storagePutHandler,
   uploadHandlers,
 } from '@/test/msw/handlers'
+import { imageFile } from '@/test/images'
 import { server } from '@/test/msw/server'
 import { renderApp } from '@/test/render'
 
@@ -18,7 +19,7 @@ function givenLoggedIn() {
 }
 
 function jpeg(name: string) {
-  return new File([new Uint8Array(100)], name, { type: 'image/jpeg' })
+  return imageFile(name, 'image/jpeg')
 }
 
 async function fillRequiredFields() {
