@@ -1,3 +1,4 @@
+import { MessageCircle } from 'lucide-react'
 import { Link } from 'react-router'
 import { UserAvatar } from '@/components/UserAvatar'
 import { Badge } from '@/components/ui/badge'
@@ -48,7 +49,13 @@ export function SpotCard({ spot }: { spot: SpotSummary }) {
           </Link>
           {spot.visitedOn && <span> ・ {formatDate(spot.visitedOn)}に訪問</span>}
         </p>
-        <LikeButton spotId={spot.id} liked={spot.likedByMe} likeCount={spot.likeCount} />
+        <div className="flex items-center gap-3">
+          <LikeButton spotId={spot.id} liked={spot.likedByMe} likeCount={spot.likeCount} />
+          <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+            <MessageCircle aria-hidden className="size-4" />
+            コメント {spot.commentCount}件
+          </span>
+        </div>
       </CardContent>
     </Card>
   )

@@ -3,6 +3,7 @@ import { UserAvatar } from '@/components/UserAvatar'
 import { Badge } from '@/components/ui/badge'
 import { buttonVariants } from '@/components/ui/button'
 import { useAuth } from '@/features/auth/useAuth'
+import { CommentSection } from '@/features/comments/components/CommentSection'
 import { LikeButton } from '@/features/likes/components/LikeButton'
 import { ApiError } from '@/lib/apiClient'
 import { formatDate, formatDateTime } from '@/lib/date'
@@ -100,6 +101,8 @@ function SpotDetail({ spotId }: { spotId: number }) {
           <time dateTime={spot.createdAt}>{formatDateTime(spot.createdAt)}</time>
         </dd>
       </dl>
+
+      <CommentSection spotId={spot.id} spotOwnerId={spot.author.id} commentCount={spot.commentCount} />
     </article>
   )
 }

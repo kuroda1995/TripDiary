@@ -61,6 +61,7 @@ export function spotFixture(overrides: Record<string, unknown> = {}) {
     photos: [],
     likeCount: 0,
     likedByMe: false,
+    commentCount: 0,
     author: {
       id: meFixture.id,
       username: meFixture.username,
@@ -136,6 +137,7 @@ export const defaultHandlers = [
   http.get('/api/v1/areas', () => HttpResponse.json(areasFixture)),
   http.get('/api/v1/spots', () => HttpResponse.json({ items: [], nextCursor: null })),
   http.get('/api/v1/me/likes', () => HttpResponse.json({ items: [], nextCursor: null })),
+  http.get('/api/v1/spots/:id/comments', () => HttpResponse.json({ items: [], nextCursor: null })),
   http.post('/api/v1/auth/refresh', () =>
     HttpResponse.json(errorResponse('INVALID_REFRESH_TOKEN', 'ログインの有効期限が切れました'), {
       status: 401,

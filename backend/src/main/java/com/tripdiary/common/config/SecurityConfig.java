@@ -49,7 +49,11 @@ public class SecurityConfig {
      * <p>トークンが付いていれば認証済みとして扱う（本人の非公開スポットの閲覧などに使う）。
      */
     static final String[] PUBLIC_READ_PATHS = {
-        "/api/v1/spots", "/api/v1/spots/*", "/api/v1/areas", "/api/v1/users/*/spots"
+        "/api/v1/spots",
+        "/api/v1/spots/*",
+        "/api/v1/spots/*/comments",
+        "/api/v1/areas",
+        "/api/v1/users/*/spots"
     };
 
     @Bean

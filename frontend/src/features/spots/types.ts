@@ -29,6 +29,7 @@ export type Spot = {
   author: Author
   likeCount: number
   likedByMe: boolean
+  commentCount: number
   createdAt: string
   updatedAt: string
 }
@@ -46,6 +47,7 @@ export type SpotSummary = {
   author: Author
   likeCount: number
   likedByMe: boolean
+  commentCount: number
   createdAt: string
 }
 

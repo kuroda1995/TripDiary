@@ -27,6 +27,7 @@ public record SpotResponse(
         UserResponse author,
         @Schema(description = "行ってみたい！の件数", example = "12") long likeCount,
         @Schema(description = "閲覧者が行ってみたい！を付けているか（未ログインは false）") boolean likedByMe,
+        @Schema(description = "コメントの件数", example = "3") long commentCount,
         Instant createdAt,
         Instant updatedAt) {
 
@@ -50,6 +51,7 @@ public record SpotResponse(
                 UserResponse.from(spot.getUser(), photoUrl),
                 reactions.likeCount(),
                 reactions.likedByMe(),
+                reactions.commentCount(),
                 spot.getCreatedAt(),
                 spot.getUpdatedAt());
     }
