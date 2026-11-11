@@ -45,6 +45,7 @@ class SpotServiceTest {
     private final PhotoStorage photoStorage = mock(PhotoStorage.class);
     private final ApplicationEventPublisher eventPublisher = mock(ApplicationEventPublisher.class);
     private final SpotReactionReader reactionReader = mock(SpotReactionReader.class);
+    private final SpotSearchRepository spotSearchRepository = mock(SpotSearchRepository.class);
     // 2026-11-11T15:30Z は日本時間で 2026-11-12 00:30
     private final MutableClock clock = MutableClock.at("2026-11-11T15:30:00Z");
     private final SpotService service =
@@ -56,6 +57,7 @@ class SpotServiceTest {
                     photoStorage,
                     eventPublisher,
                     reactionReader,
+                    spotSearchRepository,
                     clock);
 
     private final User alice = TestUsers.user(1L, "alice");
