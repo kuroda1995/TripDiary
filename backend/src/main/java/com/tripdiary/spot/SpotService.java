@@ -25,7 +25,10 @@ import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
@@ -188,6 +191,24 @@ public class SpotService {
                                         photoStorage::publicUrl,
                                         reactions.getOrDefault(spot.getId(), SpotReactions.NONE)))
                 .toList();
+    }
+
+    /**
+     * 指定した ID のスポットを、その並び順のまま一覧用の形にする（行ってみたい！した投稿・タイムラインなど）。
+     *
+     * <p>取得までの間に削除されたスポットは飛ばす。
+     */
+    @Transactional(readOnly = true)
+    public List<SpotSummaryResponse> summariesInOrder(List<Long> orderedIds, Long viewerId) {
+        if (orderedIds.isEmpty()) {
+            return List.of();
+        }
+        // ID で取得すると順番が崩れるため、指定された順に並べ直す
+        Map<Long, Spot> spots =
+                spotRepository.findAllWithUserByIdIn(orderedIds).stream()
+                        .collect(Collectors.toMap(Spot::getId, Function.identity()));
+        List<Spot> ordered = orderedIds.stream().map(spots::get).filter(Objects::nonNull).toList();
+        return toSummaries(ordered, viewerId);
     }
 
     private SpotReactions reactionsOf(Spot spot, Long viewerId) {
