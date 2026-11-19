@@ -50,7 +50,7 @@ test.describe('ユーザー認証', () => {
     // ログインするとマイページに戻る
     await page.getByLabel('メールアドレス').fill(user.email)
     await page.getByLabel('パスワード').fill(user.password)
-    await page.getByRole('button', { name: 'ログイン' }).click()
+    await page.getByRole('button', { name: 'ログイン', exact: true }).click()
     await expect(page).toHaveURL('/me')
     await expect(page.getByText(user.email)).toBeVisible()
   })
@@ -65,7 +65,7 @@ test.describe('ユーザー認証', () => {
     await page.goto('/login')
     await page.getByLabel('メールアドレス').fill(user.email)
     await page.getByLabel('パスワード').fill('Wrong0000')
-    await page.getByRole('button', { name: 'ログイン' }).click()
+    await page.getByRole('button', { name: 'ログイン', exact: true }).click()
 
     await expect(page.getByRole('alert')).toHaveText('メールアドレスまたはパスワードが正しくありません')
   })

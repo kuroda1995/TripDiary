@@ -1,5 +1,6 @@
 package com.tripdiary.user;
 
+import com.tripdiary.auth.GuestAccount;
 import com.tripdiary.common.exception.BadRequestException;
 import com.tripdiary.common.exception.NotFoundException;
 import com.tripdiary.photo.PhotoFilesDiscardedEvent;
@@ -28,6 +29,7 @@ public class UserService {
     private final UserRepository userRepository;
     private final PhotoStorage photoStorage;
     private final ApplicationEventPublisher eventPublisher;
+    private final GuestAccount guestAccount;
 
     @Transactional(readOnly = true)
     public MeResponse me(long userId) {
@@ -83,6 +85,6 @@ public class UserService {
     }
 
     private MeResponse toResponse(User user) {
-        return MeResponse.from(user, photoStorage::publicUrl);
+        return MeResponse.from(user, photoStorage::publicUrl, guestAccount.isGuest(user));
     }
 }

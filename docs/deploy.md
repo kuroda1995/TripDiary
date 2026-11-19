@@ -154,6 +154,13 @@ node infra/demo-seed.mjs (terraform -chdir=infra/terraform output -raw web_url)
 Remove-Item Env:DEMO_PASSWORD, Env:OWNER_PASSWORD
 ```
 
+**ゲストログイン**（[01_auth.md 4.8](./features/01_auth.md#48-ゲストログイン-get-authguest)）を使う場合は、デプロイ前に `DEMO_PASSWORD` と同じ値を Terraform の変数 `guest_password` に渡す（ゲストはハルカ。`guest_email` で変更可）。設定しなければゲストログインは表示されない。パスワードはログイン画面に表示されるため、ほかで使っていない値にすること。
+
+```powershell
+$env:TF_VAR_guest_password = '<DEMO_PASSWORD と同じ値>'
+powershell -ExecutionPolicy Bypass -File infra/deploy.ps1
+```
+
 `OWNER_PASSWORD` を設定すると、作者が操作する用のアカウント `kuro@example.com`（クロ。黒猫のアイコン・投稿なし・3人をフォロー済み）も作る。面接などで投稿の作成を実演するときに使う。
 
 | メールアドレス | 表示名 |
@@ -186,7 +193,7 @@ Remove-Item Env:DEMO_PASSWORD, Env:OWNER_PASSWORD
 
 ```powershell
 docker exec tripdiary-db psql -U tripdiary -d tripdiary -c "TRUNCATE users RESTART IDENTITY CASCADE;"
-$env:DEMO_PASSWORD = '<パスワード>'
+$env:DEMO_PASSWORD = 'Demo1234'   # local プロファイルのゲストログインの設定（application-local.yml）に合わせる
 $env:OWNER_PASSWORD = '<作者用アカウントのパスワード>'
 node infra/demo-seed.mjs http://localhost:8080
 Remove-Item Env:DEMO_PASSWORD, Env:OWNER_PASSWORD

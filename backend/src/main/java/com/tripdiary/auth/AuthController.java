@@ -2,9 +2,11 @@ package com.tripdiary.auth;
 
 import com.tripdiary.auth.AuthService.AuthResult;
 import com.tripdiary.auth.dto.AuthResponse;
+import com.tripdiary.auth.dto.GuestCredentialsResponse;
 import com.tripdiary.auth.dto.LoginRequest;
 import com.tripdiary.auth.dto.SignupRequest;
 import com.tripdiary.common.exception.ErrorResponse;
+import com.tripdiary.common.exception.NotFoundException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -17,19 +19,23 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CookieValue;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /** 認証 API（docs/features/01_auth.md 4章）。 */
-@Tag(name = "認証", description = "新規登録・ログイン・トークン更新・ログアウト")
+@Tag(name = "認証", description = "新規登録・ログイン・ゲストのログイン情報・トークン更新・ログアウト")
 @RestController
 @RequestMapping("/api/v1/auth")
 @RequiredArgsConstructor
 public class AuthController {
 
+    static final String GUEST_LOGIN_DISABLED = "GUEST_LOGIN_DISABLED";
+
     private final AuthService authService;
+    private final GuestAccount guestAccount;
     private final LoginRateLimiter loginRateLimiter;
     private final RefreshTokenCookies cookies;
     private final AuthResponses authResponses;
@@ -64,6 +70,29 @@ public class AuthController {
             @Valid @RequestBody LoginRequest request, HttpServletRequest httpRequest) {
         loginRateLimiter.check(httpRequest.getRemoteAddr());
         return respond(HttpStatus.OK, authService.login(request));
+    }
+
+    @Operation(
+            summary = "ゲストのログイン情報",
+            description =
+                    "ログイン画面に表示する、ゲストアカウントのメールアドレスとパスワード。"
+                            + " ゲストログインを設定していない、またはゲストのユーザーが未登録のときは 404。")
+    @ApiResponse(responseCode = "200", description = "取得成功")
+    @ApiResponse(
+            responseCode = "404",
+            description = "GUEST_LOGIN_DISABLED",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    @GetMapping("/guest")
+    public ResponseEntity<GuestCredentialsResponse> guest() {
+        GuestCredentialsResponse body =
+                guestAccount
+                        .credentials()
+                        .map(GuestCredentialsResponse::from)
+                        .orElseThrow(
+                                () ->
+                                        new NotFoundException(
+                                                GUEST_LOGIN_DISABLED, "ゲストログインは利用できません"));
+        return ResponseEntity.ok().header(HttpHeaders.CACHE_CONTROL, "no-store").body(body);
     }
 
     @Operation(

@@ -265,6 +265,24 @@ describe('パスワード変更', () => {
     expect(await screen.findByText('現在のパスワードが正しくありません')).toBeInTheDocument()
     expect(screen.getByLabelText('現在のパスワード')).toHaveAttribute('aria-invalid', 'true')
   })
+
+  it('ゲストアカウントでは変更できない旨を表示し、入力欄とボタンを無効にする', async () => {
+    givenLoggedIn({ ...meFixture, guest: true })
+    renderApp('/settings/password')
+
+    expect(await screen.findByRole('note')).toHaveTextContent('ゲストアカウントのパスワードは変更できません')
+    expect(screen.getByLabelText('現在のパスワード')).toBeDisabled()
+    expect(screen.getByLabelText('新しいパスワード')).toBeDisabled()
+    expect(screen.getByRole('button', { name: '変更する' })).toBeDisabled()
+  })
+
+  it('ゲスト以外では注意書きを出さず、入力できる', async () => {
+    givenLoggedIn()
+    renderApp('/settings/password')
+
+    expect(await screen.findByLabelText('現在のパスワード')).toBeEnabled()
+    expect(screen.queryByRole('note')).not.toBeInTheDocument()
+  })
 })
 
 describe('アイコンの表示', () => {

@@ -8,6 +8,7 @@ export const meFixture: Me = {
   displayName: '旅するタロウ',
   bio: null,
   avatarUrl: null,
+  guest: false,
 }
 
 export function authResponse(user: Me = meFixture, accessToken = 'access-token-1') {
@@ -151,6 +152,12 @@ export function profileFixture(overrides: Record<string, unknown> = {}) {
 /** 既定の振る舞い: API は正常、ログインしていない（リフレッシュトークンなし）、スポットは0件。 */
 export const defaultHandlers = [
   http.get('/actuator/health', () => HttpResponse.json({ status: 'UP' })),
+  // ゲストログインは既定で無効（使うテストで上書きする）
+  http.get('/api/v1/auth/guest', () =>
+    HttpResponse.json(errorResponse('GUEST_LOGIN_DISABLED', 'ゲストログインは利用できません'), {
+      status: 404,
+    }),
+  ),
   http.get('/api/v1/areas', () => HttpResponse.json(areasFixture)),
   http.get('/api/v1/spots', () => HttpResponse.json({ items: [], nextCursor: null })),
   http.get('/api/v1/me/likes', () => HttpResponse.json({ items: [], nextCursor: null })),

@@ -40,6 +40,11 @@ export function MyPage() {
                 <dt className="text-muted-foreground">メールアドレス</dt>
                 <dd>{me.email}</dd>
               </dl>
+              {me.guest && (
+                <p role="note" className="rounded-md bg-muted px-3 py-2 text-sm">
+                  ゲストアカウントでログインしています。複数の方が使うアカウントのため、パスワードは変更できません。
+                </p>
+              )}
               <div className="flex flex-wrap gap-2">
                 <Link to="/settings/profile" className={buttonVariants({ variant: 'outline', size: 'sm' })}>
                   プロフィールを編集

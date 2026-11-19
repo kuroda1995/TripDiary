@@ -17,7 +17,9 @@ const EMPTY: PasswordFormValues = { currentPassword: '', newPassword: '', newPas
 
 /** パスワード変更（/settings/password。ログイン必須）。 */
 export function PasswordSettingsPage() {
-  const { updateUser } = useAuth()
+  const { user, updateUser } = useAuth()
+  // ゲストアカウントは複数の人が使うため、パスワードを変更できない（サーバー側でも 403 で拒否する）
+  const isGuest = user?.guest ?? false
   const [done, setDone] = useState(false)
   const {
     register,
@@ -51,38 +53,45 @@ export function PasswordSettingsPage() {
           <CardDescription>変更すると、この端末以外ではログアウトされます。</CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={onSubmit} noValidate className="space-y-4">
-            <FormAlert message={errors.root?.server?.message} />
-            {done && (
-              <p role="status" className="rounded-md bg-muted px-3 py-2 text-sm">
-                パスワードを変更しました。
-              </p>
-            )}
-            <TextField
-              label="現在のパスワード"
-              type="password"
-              autoComplete="current-password"
-              error={errors.currentPassword?.message}
-              {...register('currentPassword')}
-            />
-            <TextField
-              label="新しいパスワード"
-              type="password"
-              autoComplete="new-password"
-              description="8〜72文字の半角英数字・記号。英字と数字をそれぞれ1文字以上含めてください。"
-              error={errors.newPassword?.message}
-              {...register('newPassword')}
-            />
-            <TextField
-              label="新しいパスワード（確認）"
-              type="password"
-              autoComplete="new-password"
-              error={errors.newPasswordConfirmation?.message}
-              {...register('newPasswordConfirmation')}
-            />
-            <Button type="submit" className="w-full" disabled={isSubmitting}>
-              {isSubmitting ? '変更中…' : '変更する'}
-            </Button>
+          {isGuest && (
+            <p role="note" className="mb-4 rounded-md bg-muted px-3 py-2 text-sm">
+              ゲストアカウントのパスワードは変更できません。ほかの方もこのアカウントでログインするためです。
+            </p>
+          )}
+          <form onSubmit={onSubmit} noValidate>
+            <fieldset disabled={isGuest} className="space-y-4">
+              <FormAlert message={errors.root?.server?.message} />
+              {done && (
+                <p role="status" className="rounded-md bg-muted px-3 py-2 text-sm">
+                  パスワードを変更しました。
+                </p>
+              )}
+              <TextField
+                label="現在のパスワード"
+                type="password"
+                autoComplete="current-password"
+                error={errors.currentPassword?.message}
+                {...register('currentPassword')}
+              />
+              <TextField
+                label="新しいパスワード"
+                type="password"
+                autoComplete="new-password"
+                description="8〜72文字の半角英数字・記号。英字と数字をそれぞれ1文字以上含めてください。"
+                error={errors.newPassword?.message}
+                {...register('newPassword')}
+              />
+              <TextField
+                label="新しいパスワード（確認）"
+                type="password"
+                autoComplete="new-password"
+                error={errors.newPasswordConfirmation?.message}
+                {...register('newPasswordConfirmation')}
+              />
+              <Button type="submit" className="w-full" disabled={isSubmitting}>
+                {isSubmitting ? '変更中…' : '変更する'}
+              </Button>
+            </fieldset>
           </form>
         </CardContent>
       </Card>

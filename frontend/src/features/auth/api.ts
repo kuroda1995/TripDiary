@@ -1,6 +1,6 @@
-import { apiFetch, refreshAccessToken, type AuthenticatedResponse } from '@/lib/apiClient'
+import { ApiError, apiFetch, refreshAccessToken, type AuthenticatedResponse } from '@/lib/apiClient'
 import { setAccessToken } from '@/lib/authSession'
-import type { LoginInput, Me, SignupInput } from './types'
+import type { GuestCredentials, LoginInput, Me, SignupInput } from './types'
 
 async function authenticate(path: string, body: unknown): Promise<Me> {
   const result = await apiFetch<AuthenticatedResponse<Me>>(path, {
@@ -17,6 +17,16 @@ export function signup(input: SignupInput): Promise<Me> {
 
 export function login(input: LoginInput): Promise<Me> {
   return authenticate('/api/v1/auth/login', input)
+}
+
+/** ゲストのログイン情報。ゲストログインを使えない（404 GUEST_LOGIN_DISABLED）ときは null。 */
+export async function fetchGuestCredentials(): Promise<GuestCredentials | null> {
+  try {
+    return await apiFetch<GuestCredentials>('/api/v1/auth/guest')
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 404) return null
+    throw error
+  }
 }
 
 /** リフレッシュトークン（Cookie）からログイン状態を復元する。 */

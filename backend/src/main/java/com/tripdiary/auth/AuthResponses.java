@@ -21,6 +21,7 @@ public class AuthResponses {
 
     private final RefreshTokenCookies cookies;
     private final PhotoStorage photoStorage;
+    private final GuestAccount guestAccount;
 
     public ResponseEntity<AuthResponse> of(HttpStatus status, AuthResult result) {
         return ResponseEntity.status(status)
@@ -33,6 +34,9 @@ public class AuthResponses {
                         AuthResponse.bearer(
                                 result.accessToken().value(),
                                 result.accessToken().expiresInSeconds(),
-                                MeResponse.from(result.user(), photoStorage::publicUrl)));
+                                MeResponse.from(
+                                        result.user(),
+                                        photoStorage::publicUrl,
+                                        guestAccount.isGuest(result.user()))));
     }
 }

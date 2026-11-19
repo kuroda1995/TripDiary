@@ -8,6 +8,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.tripdiary.auth.GuestAccount;
 import com.tripdiary.common.exception.BadRequestException;
 import com.tripdiary.photo.PhotoFilesDiscardedEvent;
 import com.tripdiary.photo.PhotoStorage;
@@ -30,8 +31,9 @@ class UserServiceTest {
     private final UserRepository userRepository = mock(UserRepository.class);
     private final PhotoStorage photoStorage = mock(PhotoStorage.class);
     private final ApplicationEventPublisher eventPublisher = mock(ApplicationEventPublisher.class);
+    private final GuestAccount guestAccount = mock(GuestAccount.class);
     private final UserService service =
-            new UserService(userRepository, photoStorage, eventPublisher);
+            new UserService(userRepository, photoStorage, eventPublisher, guestAccount);
 
     private final User user = TestUsers.user(1L, "taro");
 
@@ -53,6 +55,16 @@ class UserServiceTest {
 
     private void stored(String key, String contentType, long size) {
         when(photoStorage.head(key)).thenReturn(Optional.of(new StoredObject(contentType, size)));
+    }
+
+    @Test
+    @DisplayName("ゲストアカウントなら guest: true を返す（それ以外は false）")
+    void guestFlag() {
+        assertThat(service.me(1L).guest()).isFalse();
+
+        when(guestAccount.isGuest(user)).thenReturn(true);
+
+        assertThat(service.me(1L).guest()).isTrue();
     }
 
     @Test
