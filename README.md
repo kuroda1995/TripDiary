@@ -7,14 +7,6 @@
 
 ---
 
-## 🎬 デモ動画
-
-アプリの主な操作を画面録画で紹介しています（約18MB）。
-
-**▶ [デモ動画を再生する（docs/media/tripdiary-demo.mp4）](docs/media/tripdiary-demo.mp4)**
-
----
-
 ## ✨ 主な機能
 
 | # | 機能 | 概要 | ドキュメント |
