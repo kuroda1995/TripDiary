@@ -11,7 +11,7 @@
 
 | # | 機能 | 概要 | ドキュメント |
 | --- | --- | --- | --- |
-| 1 | ユーザー認証 | 新規登録・JWT ログイン・トークン更新・ログアウト | [01_auth.md](docs/features/01_auth.md) |
+| 1 | ユーザー認証 | 新規登録・JWT ログイン・トークン更新・ログアウト・ゲストログイン（登録なしで試せる） | [01_auth.md](docs/features/01_auth.md) |
 | 2 | スポット投稿 | 旅行スポットの記録（タイトル・場所・エリア・感想・写真）の作成・閲覧・編集・削除 | [02_spot.md](docs/features/02_spot.md) |
 | 3 | 写真アップロード | S3 署名付きURLを使った写真の直接アップロード | [03_photo_upload.md](docs/features/03_photo_upload.md) |
 | 4 | 行ってみたい！ | 気になるスポットへのいいね | [04_like.md](docs/features/04_like.md) |

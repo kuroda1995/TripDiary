@@ -173,6 +173,9 @@ resource "aws_ecs_task_definition" "api" {
       { name = "S3_BUCKET", value = aws_s3_bucket.photos.bucket },
       { name = "PHOTO_BASE_URL", value = "https://${aws_cloudfront_distribution.photos.domain_name}" },
       { name = "CORS_ALLOWED_ORIGINS", value = "https://${aws_cloudfront_distribution.web.domain_name}" },
+      # ゲストログイン。パスワードはログイン画面に表示する公開情報のため、Secrets Manager には置かない
+      { name = "GUEST_EMAIL", value = var.guest_email },
+      { name = "GUEST_PASSWORD", value = var.guest_password },
     ]
 
     secrets = [

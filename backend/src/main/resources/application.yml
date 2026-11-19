@@ -55,6 +55,11 @@ app:
     login-rate-limit:
       max-attempts: 10
       window: 5m
+  # ゲストログイン（docs/features/01_auth.md 4.8）。両方を設定し、そのユーザーが登録済みのときだけ有効。
+  # メールアドレスとパスワードはログイン画面に表示される（公開してよいデモ用のアカウントだけを指定する）
+  guest:
+    email: ${GUEST_EMAIL:}
+    password: ${GUEST_PASSWORD:}
   # 写真の保存先（docs/features/03_photo_upload.md）。
   # 既定値はローカル開発用の S3Mock（docker compose）。本番の値は application-prod.yml を参照
   storage:

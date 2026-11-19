@@ -8,6 +8,11 @@ app:
   jwt:
     # http://localhost で Cookie を使えるよう Secure 属性を外す（本番では必ず true）
     refresh-cookie-secure: false
+  # ゲストログイン。infra/demo-seed.mjs のサンプルユーザー（ハルカ）を使う。
+  # パスワードは、ローカルでサンプルデータを入れるときの DEMO_PASSWORD（docs/deploy.md 3.3）に合わせる
+  guest:
+    email: ${GUEST_EMAIL:haruka@example.com}
+    password: ${GUEST_PASSWORD:Demo1234}
 
 logging:
   level:

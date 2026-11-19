@@ -40,6 +40,19 @@ variable "db_instance_class" {
   default     = "db.t4g.micro"
 }
 
+variable "guest_email" {
+  description = "ゲストログインに使うサンプルユーザーのメールアドレス（docs/features/01_auth.md 4.8）"
+  type        = string
+  default     = "haruka@example.com"
+}
+
+variable "guest_password" {
+  description = "ゲストのパスワード（demo-seed.mjs の DEMO_PASSWORD と同じ値）。ログイン画面に表示される。空ならゲストログインは無効"
+  type        = string
+  default     = ""
+  sensitive   = true
+}
+
 variable "log_retention_days" {
   description = "CloudWatch Logs の保持日数（デモ環境のため短くする）"
   type        = number

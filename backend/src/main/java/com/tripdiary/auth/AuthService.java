@@ -7,6 +7,7 @@ import com.tripdiary.auth.dto.PasswordChangeRequest;
 import com.tripdiary.auth.dto.SignupRequest;
 import com.tripdiary.common.exception.BadRequestException;
 import com.tripdiary.common.exception.ConflictException;
+import com.tripdiary.common.exception.ForbiddenException;
 import com.tripdiary.common.exception.UnauthorizedException;
 import com.tripdiary.user.User;
 import com.tripdiary.user.UserRepository;
@@ -26,11 +27,13 @@ public class AuthService {
     static final String INVALID_CREDENTIALS = "INVALID_CREDENTIALS";
     static final String INVALID_CURRENT_PASSWORD = "INVALID_CURRENT_PASSWORD";
     static final String PASSWORD_UNCHANGED = "PASSWORD_UNCHANGED";
+    static final String GUEST_ACCOUNT_RESTRICTED = "GUEST_ACCOUNT_RESTRICTED";
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final AccessTokenService accessTokenService;
     private final RefreshTokenService refreshTokenService;
+    private final GuestAccount guestAccount;
 
     /** 存在しないメールアドレスでも照合処理を行い、応答時間からアカウントの有無を推測されないようにする。 */
     private final String dummyPasswordHash;
@@ -39,11 +42,13 @@ public class AuthService {
             UserRepository userRepository,
             PasswordEncoder passwordEncoder,
             AccessTokenService accessTokenService,
-            RefreshTokenService refreshTokenService) {
+            RefreshTokenService refreshTokenService,
+            GuestAccount guestAccount) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.accessTokenService = accessTokenService;
         this.refreshTokenService = refreshTokenService;
+        this.guestAccount = guestAccount;
         this.dummyPasswordHash = passwordEncoder.encode("dummy-password-for-timing");
     }
 
@@ -102,6 +107,8 @@ public class AuthService {
      *
      * <p>他の端末のログインを切るため全リフレッシュトークンを失効させ、操作中の端末には新しいトークンを発行する。 （他の端末のアクセストークンは JWT
      * のため、有効期限の15分までは使える。）
+     *
+     * <p>ゲストアカウントは複数の人が使うため、変更するとほかの人がログインできなくなる。そのため変更できない。
      */
     @Transactional
     public AuthResult changePassword(long userId, PasswordChangeRequest request) {
@@ -109,6 +116,10 @@ public class AuthService {
                 userRepository
                         .findById(userId)
                         .orElseThrow(() -> new UnauthorizedException("UNAUTHORIZED", "ログインが必要です"));
+        if (guestAccount.isGuest(user)) {
+            log.info("Password change rejected: guest account userId={}", userId);
+            throw new ForbiddenException(GUEST_ACCOUNT_RESTRICTED, "ゲストアカウントのパスワードは変更できません");
+        }
         if (!passwordEncoder.matches(request.currentPassword(), user.getPasswordHash())) {
             log.info("Password change rejected: wrong current password userId={}", userId);
             throw new BadRequestException(INVALID_CURRENT_PASSWORD, "現在のパスワードが正しくありません");

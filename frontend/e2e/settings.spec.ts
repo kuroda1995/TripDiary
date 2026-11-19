@@ -89,10 +89,10 @@ test('パスワードを変更すると、新しいパスワードでだけロ�
   await page.goto('/login')
   await page.getByLabel('メールアドレス').fill(user.email)
   await page.getByLabel('パスワード').fill('Passw0rd123')
-  await page.getByRole('button', { name: 'ログイン' }).click()
+  await page.getByRole('button', { name: 'ログイン', exact: true }).click()
   await expect(page.getByText('メールアドレスまたはパスワードが正しくありません')).toBeVisible()
 
   await page.getByLabel('パスワード').fill('NewPass456')
-  await page.getByRole('button', { name: 'ログイン' }).click()
+  await page.getByRole('button', { name: 'ログイン', exact: true }).click()
   await expect(page.getByRole('link', { name: user.displayName })).toBeVisible()
 })

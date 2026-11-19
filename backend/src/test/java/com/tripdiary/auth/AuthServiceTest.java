@@ -19,6 +19,7 @@ import com.tripdiary.auth.dto.PasswordChangeRequest;
 import com.tripdiary.auth.dto.SignupRequest;
 import com.tripdiary.common.exception.BadRequestException;
 import com.tripdiary.common.exception.ConflictException;
+import com.tripdiary.common.exception.ForbiddenException;
 import com.tripdiary.common.exception.UnauthorizedException;
 import com.tripdiary.support.TestUsers;
 import com.tripdiary.user.User;
@@ -39,6 +40,7 @@ class AuthServiceTest {
     private final PasswordEncoder passwordEncoder = mock(PasswordEncoder.class);
     private final AccessTokenService accessTokenService = mock(AccessTokenService.class);
     private final RefreshTokenService refreshTokenService = mock(RefreshTokenService.class);
+    private final GuestAccount guestAccount = mock(GuestAccount.class);
     private AuthService service;
 
     @BeforeEach
@@ -50,7 +52,11 @@ class AuthServiceTest {
         when(userRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
         service =
                 new AuthService(
-                        userRepository, passwordEncoder, accessTokenService, refreshTokenService);
+                        userRepository,
+                        passwordEncoder,
+                        accessTokenService,
+                        refreshTokenService,
+                        guestAccount);
     }
 
     private static SignupRequest signup() {
@@ -202,6 +208,24 @@ class AuthServiceTest {
                     .extracting("code")
                     .isEqualTo(AuthService.PASSWORD_UNCHANGED);
             verify(refreshTokenService, never()).revokeAll(anyLong());
+        }
+
+        @Test
+        @DisplayName("ゲストアカウントは現在のパスワードが合っていても GUEST_ACCOUNT_RESTRICTED（403）で、何も変えない")
+        void rejectsGuestAccount() {
+            when(guestAccount.isGuest(user)).thenReturn(true);
+
+            assertThatThrownBy(
+                            () ->
+                                    service.changePassword(
+                                            1L,
+                                            new PasswordChangeRequest("Current123", "NewPass456")))
+                    .isInstanceOf(ForbiddenException.class)
+                    .extracting("code")
+                    .isEqualTo(AuthService.GUEST_ACCOUNT_RESTRICTED);
+            assertThat(user.getPasswordHash()).isEqualTo("hashed");
+            verify(refreshTokenService, never()).revokeAll(anyLong());
+            verify(refreshTokenService, never()).issue(any());
         }
 
         @Test

@@ -155,6 +155,95 @@ describe('ログイン画面', () => {
   })
 })
 
+describe('ゲストログイン', () => {
+  const guest = { email: 'haruka@example.com', password: 'Demo1234' }
+
+  function givenGuestLoginEnabled() {
+    server.use(http.get('/api/v1/auth/guest', () => HttpResponse.json(guest)))
+  }
+
+  it('ゲストログインが無効な環境では、ゲスト用のボタンもログイン情報も表示しない', async () => {
+    renderApp('/login')
+
+    expect(await screen.findByRole('heading', { name: 'ログイン' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /ゲストとしてログイン/ })).not.toBeInTheDocument()
+    expect(screen.queryByText(guest.email)).not.toBeInTheDocument()
+  })
+
+  it('ゲスト用のメールアドレスとパスワードを表示する', async () => {
+    givenGuestLoginEnabled()
+    renderApp('/login')
+
+    expect(
+      await screen.findByRole('button', { name: 'ゲストとしてログイン（採用担当者様用）' }),
+    ).toBeInTheDocument()
+    expect(screen.getByText('haruka@example.com')).toBeInTheDocument()
+    expect(screen.getByText('Demo1234')).toBeInTheDocument()
+  })
+
+  it('ゲストとしてログインすると、表示しているログイン情報でログインして redirect の画面へ移動する', async () => {
+    givenGuestLoginEnabled()
+    let sentBody: unknown = null
+    server.use(
+      http.post('/api/v1/auth/login', async ({ request }) => {
+        sentBody = await request.json()
+        return HttpResponse.json(authResponse({ ...meFixture, guest: true }))
+      }),
+      http.get('/api/v1/users/me', () => HttpResponse.json({ ...meFixture, guest: true })),
+    )
+    renderApp('/login?redirect=%2Fme')
+
+    await userEvent.click(
+      await screen.findByRole('button', { name: 'ゲストとしてログイン（採用担当者様用）' }),
+    )
+
+    expect(await screen.findByRole('heading', { name: 'マイページ' })).toBeInTheDocument()
+    expect(sentBody).toEqual(guest)
+    expect(await screen.findByRole('note')).toHaveTextContent('ゲストアカウントでログインしています')
+  })
+
+  it('「フォームに入力する」でログインフォームに入れ、ログインボタンでログインできる', async () => {
+    givenGuestLoginEnabled()
+    let sentBody: unknown = null
+    server.use(
+      http.post('/api/v1/auth/login', async ({ request }) => {
+        sentBody = await request.json()
+        return HttpResponse.json(authResponse())
+      }),
+    )
+    renderApp('/login')
+
+    await userEvent.click(await screen.findByRole('button', { name: 'フォームに入力する' }))
+
+    expect(screen.getByLabelText('メールアドレス')).toHaveValue('haruka@example.com')
+    expect(screen.getByLabelText('パスワード')).toHaveValue('Demo1234')
+    await userEvent.click(screen.getByRole('button', { name: 'ログイン' }))
+    await waitFor(() => expect(sentBody).toEqual(guest))
+  })
+
+  it('ゲストログインに失敗したらメッセージを表示し、もう一度押せる', async () => {
+    givenGuestLoginEnabled()
+    server.use(
+      http.post('/api/v1/auth/login', () =>
+        HttpResponse.json(
+          errorResponse(
+            'TOO_MANY_REQUESTS',
+            'ログインの試行回数が多すぎます。しばらく時間をおいてお試しください',
+          ),
+          { status: 429 },
+        ),
+      ),
+    )
+    renderApp('/login')
+
+    const button = await screen.findByRole('button', { name: 'ゲストとしてログイン（採用担当者様用）' })
+    await userEvent.click(button)
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('ログインの試行回数が多すぎます')
+    expect(button).toBeEnabled()
+  })
+})
+
 describe('新規登録画面', () => {
   async function fillSignupForm(overrides: Partial<Record<string, string>> = {}) {
     const values = {

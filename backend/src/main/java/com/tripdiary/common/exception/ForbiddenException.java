@@ -10,4 +10,9 @@ public class ForbiddenException extends ApiException {
     public ForbiddenException(String message) {
         super(HttpStatus.FORBIDDEN, CODE, message);
     }
+
+    /** 理由ごとのエラーコードを返す場合（例: GUEST_ACCOUNT_RESTRICTED）。 */
+    public ForbiddenException(String code, String message) {
+        super(HttpStatus.FORBIDDEN, code, message);
+    }
 }

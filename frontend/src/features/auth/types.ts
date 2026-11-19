@@ -6,6 +6,14 @@ export type Me = {
   displayName: string
   bio: string | null
   avatarUrl: string | null
+  /** ゲストアカウントか（パスワードを変更できない。docs/features/01_auth.md 4.8） */
+  guest: boolean
+}
+
+/** ゲストのログイン情報（GET /api/v1/auth/guest。ログイン画面に表示する）。 */
+export type GuestCredentials = {
+  email: string
+  password: string
 }
 
 export type SignupInput = {

@@ -12,18 +12,22 @@ public record MeResponse(
         @Schema(example = "taro_trip") String username,
         @Schema(example = "旅するタロウ") String displayName,
         @Schema(nullable = true, example = "週末は温泉めぐり♨") String bio,
-        @Schema(description = "アイコン画像の URL（未設定は null）", nullable = true) String avatarUrl) {
+        @Schema(description = "アイコン画像の URL（未設定は null）", nullable = true) String avatarUrl,
+        @Schema(description = "ゲストアカウントか（パスワードを変更できない。docs/features/01_auth.md 4.8）")
+                boolean guest) {
 
     /**
      * @param photoUrl S3 キーから配信 URL を作る関数
+     * @param guest ゲストアカウントか
      */
-    public static MeResponse from(User user, UnaryOperator<String> photoUrl) {
+    public static MeResponse from(User user, UnaryOperator<String> photoUrl, boolean guest) {
         return new MeResponse(
                 user.getId(),
                 user.getEmail(),
                 user.getUsername(),
                 user.getDisplayName(),
                 user.getBio(),
-                UserResponse.avatarUrl(user, photoUrl));
+                UserResponse.avatarUrl(user, photoUrl),
+                guest);
     }
 }
