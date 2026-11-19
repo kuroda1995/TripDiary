@@ -295,11 +295,16 @@ for (const [by, key, status] of statuses) {
 }
 
 // ---- 作者が操作する用のアカウント（OWNER_PASSWORD を設定したときだけ） ----
-// 投稿は持たず、サンプルユーザー3人をフォローしておく（ログインするとタイムラインに投稿が並ぶ）
+// アイコンは黒猫（旅先のブライエス湖で撮られたもの）。投稿は持たず、サンプルユーザー3人をフォローしておく（ログインするとタイムラインに投稿が並ぶ）
 if (ownerPassword) {
   const owner = { email: 'kuro@example.com', username: 'kuro', displayName: 'クロ' }
   const { accessToken } = await api('POST', '/auth/signup', { body: { ...owner, password: ownerPassword } })
-  await api('PATCH', '/users/me', { token: accessToken, body: { bio: '旅の記録をつけています。' } })
+  const avatarS3Key = await uploadPhoto(
+    accessToken,
+    'Black stray cat of Braies Lake, Trentino-Alto Adige, Italy.jpg',
+    'AVATAR',
+  )
+  await api('PATCH', '/users/me', { token: accessToken, body: { bio: '旅の記録をつけています。', avatarS3Key } })
   for (const user of Object.values(users)) {
     await api('PUT', `/users/${user.username}/follow`, { token: accessToken })
   }

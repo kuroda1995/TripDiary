@@ -154,7 +154,7 @@ node infra/demo-seed.mjs (terraform -chdir=infra/terraform output -raw web_url)
 Remove-Item Env:DEMO_PASSWORD, Env:OWNER_PASSWORD
 ```
 
-`OWNER_PASSWORD` を設定すると、作者が操作する用のアカウント `kuro@example.com`（クロ。投稿なし・3人をフォロー済み）も作る。面接などで投稿の作成を実演するときに使う。
+`OWNER_PASSWORD` を設定すると、作者が操作する用のアカウント `kuro@example.com`（クロ。黒猫のアイコン・投稿なし・3人をフォロー済み）も作る。面接などで投稿の作成を実演するときに使う。
 
 | メールアドレス | 表示名 |
 | --- | --- |
@@ -168,6 +168,7 @@ Remove-Item Env:DEMO_PASSWORD, Env:OWNER_PASSWORD
 | --- | --- | --- | --- |
 | アイコン（ハルカ） | [Sakura-mochi 003.jpg](https://commons.wikimedia.org/wiki/File:Sakura-mochi_003.jpg) | Ocdp | CC0 |
 | アイコン（ケンタ） | [Canon AE-1 Program (Unsplash).jpg](https://commons.wikimedia.org/wiki/File:Canon_AE-1_Program_(Unsplash).jpg) | Mark Solarski | CC0 |
+| アイコン（クロ・作者用） | [Black stray cat of Braies Lake, Trentino-Alto Adige, Italy.jpg](https://commons.wikimedia.org/wiki/File:Black_stray_cat_of_Braies_Lake,_Trentino-Alto_Adige,_Italy.jpg) | LeosCommons | CC0 |
 | アイコン（ミサキ） | [251130 Yubatake, Kusatsu 01.jpg](https://commons.wikimedia.org/wiki/File:251130_Yubatake,_Kusatsu_01.jpg) | Aspere | CC0 |
 | 白川郷 | [Shirakawa-go - Shirakawa178.jpg](https://commons.wikimedia.org/wiki/File:Shirakawa-go_-_Shirakawa178.jpg) | lumoplank | CC0 |
 | 倉敷美観地区 | [倉敷美観地区3.jpg](https://commons.wikimedia.org/wiki/File:倉敷美観地区3.jpg) | キアラア | CC0 |
