@@ -1,4 +1,4 @@
-// デモ環境にサンプルデータ（ユーザー・投稿・コメント・行ってみたい！・フォロー・ステータス）を入れる（docs/deploy.md）。
+// デモ環境にサンプルデータ（ユーザー・アイコン・投稿・写真・コメント・行ってみたい！・フォロー・ステータス）を入れる（docs/deploy.md）。
 //
 //   $env:DEMO_PASSWORD = '...'   # 3ユーザー共通のパスワード（英字と数字を含む8文字以上）。コミットしないこと
 //   node infra/demo-seed.mjs https://xxxx.cloudfront.net
@@ -36,10 +36,10 @@ async function api(method, path, { token, body } = {}) {
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 const CONTENT_TYPES = { jpeg: 'image/jpeg', png: 'image/png', webp: 'image/webp' }
 
-async function downloadCommonsPhoto(fileName) {
-  // 幅 1600px 前後の縮小版（Wikimedia が決まったサイズに丸めるため、実際は 1920px になることがある）。
+async function downloadCommonsPhoto(fileName, width) {
+  // 指定した幅の縮小版（Wikimedia が決まったサイズに丸めるため、少し大きくなることがある）。
   // Wikimedia は自動アクセスに User-Agent を求め、短時間に続けると 429 を返す
-  const url = `https://commons.wikimedia.org/wiki/Special:FilePath/${encodeURIComponent(fileName)}?width=1600`
+  const url = `https://commons.wikimedia.org/wiki/Special:FilePath/${encodeURIComponent(fileName)}?width=${width}`
   for (let attempt = 1; ; attempt++) {
     const res = await fetch(url, { headers: { 'User-Agent': 'demo-seed-script/1.0' } })
     if (res.ok) return new Uint8Array(await res.arrayBuffer())
@@ -48,12 +48,13 @@ async function downloadCommonsPhoto(fileName) {
   }
 }
 
-async function uploadPhoto(token, fileName) {
-  const bytes = stripMetadata(await downloadCommonsPhoto(fileName))
+// purpose: SPOT_PHOTO（スポット写真。幅 1600px）/ AVATAR（アイコン。幅 800px）
+async function uploadPhoto(token, fileName, purpose = 'SPOT_PHOTO') {
+  const bytes = stripMetadata(await downloadCommonsPhoto(fileName, purpose === 'AVATAR' ? 800 : 1600))
   const contentType = CONTENT_TYPES[detectImageFormat(bytes)]
   const { uploadUrl, s3Key } = await api('POST', '/uploads/presigned-url', {
     token,
-    body: { purpose: 'SPOT_PHOTO', contentType, contentLength: bytes.length },
+    body: { purpose, contentType, contentLength: bytes.length },
   })
   const res = await fetch(uploadUrl, { method: 'PUT', headers: { 'Content-Type': contentType }, body: bytes })
   if (!res.ok) throw new Error(`S3 へのアップロードに失敗しました: ${fileName} → ${res.status}`)
@@ -75,24 +76,28 @@ const area = (...names) =>
   })
 
 // ---- ユーザー ----
+// avatar は Wikimedia Commons のファイル名。架空のユーザーなので人の顔は使わず、自己紹介に合うものにする
 const users = {
   haruka: {
     email: 'haruka@example.com',
     username: 'haruka_trip',
     displayName: '旅するハルカ',
     bio: '週末はだいたいどこかに出かけています。古い町並みと甘いものが好き。',
+    avatar: 'Sakura-mochi 003.jpg',
   },
   kenta: {
     email: 'kenta@example.com',
     username: 'kenta_camera',
     displayName: 'カメラ好きのケンタ',
     bio: '景色を撮りに全国をまわっています。朝焼けと夜景が得意です📷',
+    avatar: 'Canon AE-1 Program (Unsplash).jpg',
   },
   misaki: {
     email: 'misaki@example.com',
     username: 'misaki_onsen',
     displayName: '温泉めぐりのミサキ',
     bio: '温泉と地元のごはんが旅の目的。行った温泉は100か所を超えました♨',
+    avatar: '251130 Yubatake, Kusatsu 01.jpg',
   },
 }
 
@@ -101,7 +106,8 @@ for (const user of Object.values(users)) {
     body: { email: user.email, username: user.username, displayName: user.displayName, password },
   })
   user.token = accessToken
-  await api('PATCH', '/users/me', { token: user.token, body: { bio: user.bio } })
+  const avatarS3Key = await uploadPhoto(user.token, user.avatar, 'AVATAR')
+  await api('PATCH', '/users/me', { token: user.token, body: { bio: user.bio, avatarS3Key } })
   console.log(`ユーザー: ${user.displayName}（${user.email}）`)
 }
 

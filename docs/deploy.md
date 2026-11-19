@@ -145,7 +145,7 @@ Remove-Item Env:E2E_BASE_URL
 
 ### 3.3 サンプルデータ
 
-メンターさんが見て操作できるよう、API を通してサンプルデータ（ユーザー3人・投稿10件〈うち非公開1件〉・写真14枚・コメント・行ってみたい！・フォロー・行った！/行きたい）を入れる。ローカル環境（`http://localhost:8080`）にも同じ手順で入れられる。
+メンターさんが見て操作できるよう、API を通してサンプルデータ（ユーザー3人〈アイコン付き〉・投稿10件〈うち非公開1件〉・写真14枚・コメント・行ってみたい！・フォロー・行った！/行きたい）を入れる。ローカル環境（`http://localhost:8080`）にも同じ手順で入れられる。
 
 ```powershell
 $env:DEMO_PASSWORD = '<3ユーザー共通のパスワード>'   # コミットしない
@@ -159,10 +159,13 @@ Remove-Item Env:DEMO_PASSWORD
 | `kenta@example.com` | カメラ好きのケンタ |
 | `misaki@example.com` | 温泉めぐりのミサキ |
 
-写真は [Wikimedia Commons](https://commons.wikimedia.org/) から、**CC0 またはパブリックドメイン**（クレジット表記が不要で、改変・再配布も自由）のものだけを選んでいる。リポジトリには画像を置かず、スクリプトの実行時に幅1920px程度の縮小版（1枚 0.5〜1MB）をダウンロードし、画面と同じ処理（`stripMetadata.ts`）でメタデータを取り除いてから、署名付きURLで S3 にアップロードする。インターネットへの接続が必要。
+写真は [Wikimedia Commons](https://commons.wikimedia.org/) から、**CC0 またはパブリックドメイン**（クレジット表記が不要で、改変・再配布も自由）のものだけを選んでいる。リポジトリには画像を置かず、スクリプトの実行時に縮小版（投稿の写真は幅1920px程度で1枚 0.5〜1MB、アイコンは幅800px程度）をダウンロードし、画面と同じ処理（`stripMetadata.ts`）でメタデータを取り除いてから、署名付きURLで S3 にアップロードする。インターネットへの接続が必要。
 
-| 投稿 | ファイル（Wikimedia Commons） | 作者 | ライセンス |
+| 投稿・アイコン | ファイル（Wikimedia Commons） | 作者 | ライセンス |
 | --- | --- | --- | --- |
+| アイコン（ハルカ） | [Sakura-mochi 003.jpg](https://commons.wikimedia.org/wiki/File:Sakura-mochi_003.jpg) | Ocdp | CC0 |
+| アイコン（ケンタ） | [Canon AE-1 Program (Unsplash).jpg](https://commons.wikimedia.org/wiki/File:Canon_AE-1_Program_(Unsplash).jpg) | Mark Solarski | CC0 |
+| アイコン（ミサキ） | [251130 Yubatake, Kusatsu 01.jpg](https://commons.wikimedia.org/wiki/File:251130_Yubatake,_Kusatsu_01.jpg) | Aspere | CC0 |
 | 白川郷 | [Shirakawa-go - Shirakawa178.jpg](https://commons.wikimedia.org/wiki/File:Shirakawa-go_-_Shirakawa178.jpg) | lumoplank | CC0 |
 | 倉敷美観地区 | [倉敷美観地区3.jpg](https://commons.wikimedia.org/wiki/File:倉敷美観地区3.jpg) | キアラア | CC0 |
 | 上高地 | [Kamikochi - Kamikochi6519.jpg](https://commons.wikimedia.org/wiki/File:Kamikochi_-_Kamikochi6519.jpg)、[Kamikochi6522.jpg](https://commons.wikimedia.org/wiki/File:Kamikochi_-_Kamikochi6522.jpg) | lumoplank | CC0 |
