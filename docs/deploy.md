@@ -149,9 +149,12 @@ Remove-Item Env:E2E_BASE_URL
 
 ```powershell
 $env:DEMO_PASSWORD = '<3ユーザー共通のパスワード>'   # コミットしない
+$env:OWNER_PASSWORD = '<作者用アカウントのパスワード>' # 任意。コミットしない
 node infra/demo-seed.mjs (terraform -chdir=infra/terraform output -raw web_url)
-Remove-Item Env:DEMO_PASSWORD
+Remove-Item Env:DEMO_PASSWORD, Env:OWNER_PASSWORD
 ```
+
+`OWNER_PASSWORD` を設定すると、作者が操作する用のアカウント `kuro@example.com`（クロ。投稿なし・3人をフォロー済み）も作る。面接などで投稿の作成を実演するときに使う。
 
 | メールアドレス | 表示名 |
 | --- | --- |
@@ -183,8 +186,9 @@ Remove-Item Env:DEMO_PASSWORD
 ```powershell
 docker exec tripdiary-db psql -U tripdiary -d tripdiary -c "TRUNCATE users RESTART IDENTITY CASCADE;"
 $env:DEMO_PASSWORD = '<パスワード>'
+$env:OWNER_PASSWORD = '<作者用アカウントのパスワード>'
 node infra/demo-seed.mjs http://localhost:8080
-Remove-Item Env:DEMO_PASSWORD
+Remove-Item Env:DEMO_PASSWORD, Env:OWNER_PASSWORD
 ```
 
 S3Mock に残った古い写真は、孤立ファイル削除（毎時）で片付く。

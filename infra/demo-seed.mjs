@@ -1,6 +1,7 @@
 // デモ環境にサンプルデータ（ユーザー・アイコン・投稿・写真・コメント・行ってみたい！・フォロー・ステータス）を入れる（docs/deploy.md）。
 //
 //   $env:DEMO_PASSWORD = '...'   # 3ユーザー共通のパスワード（英字と数字を含む8文字以上）。コミットしないこと
+//   $env:OWNER_PASSWORD = '...'  # 任意。設定すると、作者が操作する用のアカウント（kuro@example.com）も作る
 //   node infra/demo-seed.mjs https://xxxx.cloudfront.net
 //
 // API を通して登録するため、DB を空にした直後に1回だけ実行する（同じユーザーがいると登録で失敗する）。
@@ -13,6 +14,7 @@ import { detectImageFormat, stripMetadata } from '../frontend/src/features/photo
 
 const baseUrl = process.argv[2]?.replace(/\/$/, '')
 const password = process.env.DEMO_PASSWORD
+const ownerPassword = process.env.OWNER_PASSWORD
 if (!baseUrl || !password) {
   console.error('使い方: DEMO_PASSWORD を設定して node infra/demo-seed.mjs <アプリの URL>')
   process.exit(1)
@@ -290,6 +292,18 @@ const statuses = [
 ]
 for (const [by, key, status] of statuses) {
   await api('PUT', `/spots/${spots[key]}/status`, { token: users[by].token, body: { status } })
+}
+
+// ---- 作者が操作する用のアカウント（OWNER_PASSWORD を設定したときだけ） ----
+// 投稿は持たず、サンプルユーザー3人をフォローしておく（ログインするとタイムラインに投稿が並ぶ）
+if (ownerPassword) {
+  const owner = { email: 'kuro@example.com', username: 'kuro', displayName: 'クロ' }
+  const { accessToken } = await api('POST', '/auth/signup', { body: { ...owner, password: ownerPassword } })
+  await api('PATCH', '/users/me', { token: accessToken, body: { bio: '旅の記録をつけています。' } })
+  for (const user of Object.values(users)) {
+    await api('PUT', `/users/${user.username}/follow`, { token: accessToken })
+  }
+  console.log(`ユーザー: ${owner.displayName}（${owner.email}・作者用）`)
 }
 
 console.log(
