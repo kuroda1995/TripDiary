@@ -13,6 +13,7 @@ import { AreaTagBadges } from '../components/AreaTagBadges'
 import { DeleteSpotButton } from '../components/DeleteSpotButton'
 import { PhotoGallery } from '../components/PhotoGallery'
 import { SpotNotFound } from '../components/SpotNotFound'
+import { TempleFeatureBadges, TempleRatingList } from '../components/TempleReview'
 import { useSpotIdParam } from '../useSpotIdParam'
 
 export function SpotDetailPage() {
@@ -69,6 +70,7 @@ function SpotDetail({ spotId }: { spotId: number }) {
           {spot.visibility === 'PRIVATE' && <Badge variant="outline">非公開</Badge>}
         </p>
         <AreaTagBadges tags={spot.areaTags} />
+        <TempleFeatureBadges features={spot.templeFeatures} />
         <div className="flex flex-wrap items-center gap-3">
           <LikeButton spotId={spot.id} liked={spot.likedByMe} likeCount={spot.likeCount} size="default" />
           <StatusSelect spotId={spot.id} status={spot.myStatus} showLabel />
@@ -82,6 +84,8 @@ function SpotDetail({ spotId }: { spotId: number }) {
       ) : (
         <p className="text-sm text-muted-foreground">感想はまだありません。</p>
       )}
+
+      <TempleRatingList ratings={spot.ratings} />
 
       <dl className="grid grid-cols-[max-content_1fr] gap-x-6 gap-y-1 border-t pt-4 text-sm">
         <dt className="text-muted-foreground">投稿者</dt>

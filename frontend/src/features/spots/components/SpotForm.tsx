@@ -18,6 +18,7 @@ import {
 } from '../schemas'
 import type { SpotInput } from '../types'
 import { AreaTagPicker } from './AreaTagPicker'
+import { TempleFeaturePicker, TempleRatingsInput } from './TempleReviewFields'
 
 const FIELDS = [
   'title',
@@ -27,6 +28,8 @@ const FIELDS = [
   'visitedOn',
   'visibility',
   'photos',
+  'ratings',
+  'templeFeatures',
 ] as const
 
 type SpotFormProps = {
@@ -118,6 +121,16 @@ export function SpotForm({ defaultValues, submitLabel, onSubmit }: SpotFormProps
         </p>
         {errors.impression && <p className="text-xs text-destructive">{errors.impression.message}</p>}
       </div>
+      <Controller
+        control={control}
+        name="ratings"
+        render={({ field }) => <TempleRatingsInput value={field.value} onChange={field.onChange} />}
+      />
+      <Controller
+        control={control}
+        name="templeFeatures"
+        render={({ field }) => <TempleFeaturePicker value={field.value} onChange={field.onChange} />}
+      />
       <Controller
         control={control}
         name="photos"

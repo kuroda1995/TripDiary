@@ -52,7 +52,8 @@ public class SpotController {
     @Operation(
             summary = "一覧・検索",
             description =
-                    "公開スポットを返す（カーソルページング）。エリアタグ（子孫タグを含む・OR）とキーワードで絞り込み、"
+                    "公開スポットを返す（カーソルページング）。エリアタグ（子孫タグを含む・OR）・キーワード・"
+                            + "お寺の特徴タグ（指定したすべてを持つ投稿）で絞り込み（各条件は AND）、"
                             + "新着順・人気順（行ってみたい！数順）に並べ替えられる。条件を省略すると新着一覧。"
                             + "カーソルは並び順ごとに形式が違うため、並び順を変えたら最初のページから取得し直す。")
     @ApiResponse(
@@ -69,6 +70,9 @@ public class SpotController {
                     @RequestParam(required = false)
                     @Size(max = MAX_KEYWORD_LENGTH, message = "キーワードは{max}文字以内で入力してください")
                     String q,
+            @Parameter(description = "お寺の特徴タグ（カンマ区切り。指定したすべてを持つ投稿に絞る）", example = "GOSHUIN,GARDEN")
+                    @RequestParam(defaultValue = "")
+                    List<TempleFeature> features,
             @Parameter(description = "並び順: newest（新着順）/ popular（行ってみたい！数順）")
                     @RequestParam(defaultValue = "newest")
                     @Pattern(regexp = "newest|popular", message = "並び順は newest か popular を指定してください")
@@ -81,7 +85,8 @@ public class SpotController {
                     @Max(MAX_LIMIT)
                     int limit,
             @AuthenticationPrincipal AuthenticatedUser viewer) {
-        return spotService.search(areaIds, q, SpotSort.of(sort), viewerId(viewer), cursor, limit);
+        return spotService.search(
+                areaIds, q, features, SpotSort.of(sort), viewerId(viewer), cursor, limit);
     }
 
     @Operation(summary = "ユーザー別一覧", description = "本人が見る場合は非公開スポットも含める。")

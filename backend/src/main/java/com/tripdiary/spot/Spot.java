@@ -21,6 +21,8 @@ import jakarta.persistence.Table;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -32,7 +34,9 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.UpdateTimestamp;
+import org.hibernate.type.SqlTypes;
 
 /** スポット（旅行先の投稿。テーブル定義: docs/database_schema.md 3.3）。 */
 @Entity
@@ -63,6 +67,33 @@ public class Spot {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private Visibility visibility;
+
+    // お寺の5段階評価（1〜5、未評価は null。読み出しは templeRatings()）
+    @Getter(AccessLevel.NONE)
+    @JdbcTypeCode(SqlTypes.SMALLINT)
+    @Column(name = "rating_tranquility")
+    private Integer ratingTranquility;
+
+    @Getter(AccessLevel.NONE)
+    @JdbcTypeCode(SqlTypes.SMALLINT)
+    @Column(name = "rating_beauty")
+    private Integer ratingBeauty;
+
+    @Getter(AccessLevel.NONE)
+    @JdbcTypeCode(SqlTypes.SMALLINT)
+    @Column(name = "rating_worship")
+    private Integer ratingWorship;
+
+    @Getter(AccessLevel.NONE)
+    @JdbcTypeCode(SqlTypes.SMALLINT)
+    @Column(name = "rating_access")
+    private Integer ratingAccess;
+
+    /** 特徴タグの名前（{@link TempleFeature}）。読み書きは {@link #templeFeatures()} を使う。 */
+    @Getter(AccessLevel.NONE)
+    @JdbcTypeCode(SqlTypes.ARRAY)
+    @Column(name = "temple_features", nullable = false)
+    private String[] templeFeatureNames = new String[0];
 
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
@@ -101,6 +132,29 @@ public class Spot {
         this.visibility = content.visibility();
         this.areaTags.clear();
         this.areaTags.addAll(content.areaTags());
+        TempleRatings ratings = content.ratings();
+        this.ratingTranquility = ratings == null ? null : ratings.tranquility();
+        this.ratingBeauty = ratings == null ? null : ratings.beauty();
+        this.ratingWorship = ratings == null ? null : ratings.worship();
+        this.ratingAccess = ratings == null ? null : ratings.access();
+        // 表示順（宣言順）で保存し、重複は1つにまとめる
+        this.templeFeatureNames =
+                content.templeFeatures().stream()
+                        .distinct()
+                        .sorted()
+                        .map(TempleFeature::name)
+                        .toArray(String[]::new);
+    }
+
+    /** お寺の5段階評価（すべて未評価なら null）。 */
+    public TempleRatings templeRatings() {
+        return TempleRatings.ofNullable(
+                ratingTranquility, ratingBeauty, ratingWorship, ratingAccess);
+    }
+
+    /** お寺の特徴タグ（表示順）。 */
+    public List<TempleFeature> templeFeatures() {
+        return Arrays.stream(templeFeatureNames).map(TempleFeature::valueOf).sorted().toList();
     }
 
     /**
@@ -156,14 +210,33 @@ public class Spot {
         return "Spot{id=" + id + "}";
     }
 
-    /** 投稿内容（作成・更新で共通）。 */
+    /**
+     * 投稿内容（作成・更新で共通）。
+     *
+     * @param ratings お寺の5段階評価（未評価なら null）
+     * @param templeFeatures お寺の特徴タグ（なければ空）
+     */
     public record SpotContent(
             String title,
             String locationName,
             String impression,
             LocalDate visitedOn,
             Visibility visibility,
-            Set<AreaTag> areaTags) {}
+            Set<AreaTag> areaTags,
+            TempleRatings ratings,
+            Collection<TempleFeature> templeFeatures) {
+
+        /** お寺の評価・特徴タグのない投稿内容。 */
+        public SpotContent(
+                String title,
+                String locationName,
+                String impression,
+                LocalDate visitedOn,
+                Visibility visibility,
+                Set<AreaTag> areaTags) {
+            this(title, locationName, impression, visitedOn, visibility, areaTags, null, List.of());
+        }
+    }
 
     /** 追加・並べ替え後の写真（content type は S3 上のファイルで確認した値）。 */
     public record NewPhoto(String s3Key, String contentType) {}
