@@ -145,19 +145,54 @@ Remove-Item Env:E2E_BASE_URL
 
 ### 3.3 サンプルデータ
 
-メンターさんが見て操作できるよう、API を通してサンプルデータ（ユーザー3人・投稿10件〈うち非公開1件〉・コメント・行ってみたい！・フォロー・行った！/行きたい）を入れる。写真は付けない。
+メンターさんが見て操作できるよう、API を通してサンプルデータ（ユーザー3人〈アイコン付き〉・投稿10件〈うち非公開1件〉・写真14枚・コメント・行ってみたい！・フォロー・行った！/行きたい）を入れる。ローカル環境（`http://localhost:8080`）にも同じ手順で入れられる。
 
 ```powershell
 $env:DEMO_PASSWORD = '<3ユーザー共通のパスワード>'   # コミットしない
+$env:OWNER_PASSWORD = '<作者用アカウントのパスワード>' # 任意。コミットしない
 node infra/demo-seed.mjs (terraform -chdir=infra/terraform output -raw web_url)
-Remove-Item Env:DEMO_PASSWORD
+Remove-Item Env:DEMO_PASSWORD, Env:OWNER_PASSWORD
 ```
+
+`OWNER_PASSWORD` を設定すると、作者が操作する用のアカウント `kuro@example.com`（クロ。黒猫のアイコン・投稿なし・3人をフォロー済み）も作る。面接などで投稿の作成を実演するときに使う。
 
 | メールアドレス | 表示名 |
 | --- | --- |
 | `haruka@example.com` | 旅するハルカ（非公開の投稿あり。ログインして見てもらう用） |
 | `kenta@example.com` | カメラ好きのケンタ |
 | `misaki@example.com` | 温泉めぐりのミサキ |
+
+写真は [Wikimedia Commons](https://commons.wikimedia.org/) から、**CC0 またはパブリックドメイン**（クレジット表記が不要で、改変・再配布も自由）のものだけを選んでいる。リポジトリには画像を置かず、スクリプトの実行時に縮小版（投稿の写真は幅1920px程度で1枚 0.5〜1MB、アイコンは幅800px程度）をダウンロードし、画面と同じ処理（`stripMetadata.ts`）でメタデータを取り除いてから、署名付きURLで S3 にアップロードする。インターネットへの接続が必要。
+
+| 投稿・アイコン | ファイル（Wikimedia Commons） | 作者 | ライセンス |
+| --- | --- | --- | --- |
+| アイコン（ハルカ） | [Sakura-mochi 003.jpg](https://commons.wikimedia.org/wiki/File:Sakura-mochi_003.jpg) | Ocdp | CC0 |
+| アイコン（ケンタ） | [Canon AE-1 Program (Unsplash).jpg](https://commons.wikimedia.org/wiki/File:Canon_AE-1_Program_(Unsplash).jpg) | Mark Solarski | CC0 |
+| アイコン（クロ・作者用） | [Black stray cat of Braies Lake, Trentino-Alto Adige, Italy.jpg](https://commons.wikimedia.org/wiki/File:Black_stray_cat_of_Braies_Lake,_Trentino-Alto_Adige,_Italy.jpg) | LeosCommons | CC0 |
+| アイコン（ミサキ） | [251130 Yubatake, Kusatsu 01.jpg](https://commons.wikimedia.org/wiki/File:251130_Yubatake,_Kusatsu_01.jpg) | Aspere | CC0 |
+| 白川郷 | [Shirakawa-go - Shirakawa178.jpg](https://commons.wikimedia.org/wiki/File:Shirakawa-go_-_Shirakawa178.jpg) | lumoplank | CC0 |
+| 倉敷美観地区 | [倉敷美観地区3.jpg](https://commons.wikimedia.org/wiki/File:倉敷美観地区3.jpg) | キアラア | CC0 |
+| 上高地 | [Kamikochi - Kamikochi6519.jpg](https://commons.wikimedia.org/wiki/File:Kamikochi_-_Kamikochi6519.jpg)、[Kamikochi6522.jpg](https://commons.wikimedia.org/wiki/File:Kamikochi_-_Kamikochi6522.jpg) | lumoplank | CC0 |
+| 別府 | [Akaike (Red Pond Hotspring) Beppu Japan.jpg](https://commons.wikimedia.org/wiki/File:Akaike_(Red_Pond_Hotspring)_Beppu_Japan.jpg) | Photos of Japan | CC0 |
+| 九份 | [A-mei Tea House.jpg](https://commons.wikimedia.org/wiki/File:A-mei_Tea_House.jpg) | lumoplank | CC0 |
+| 九份 | [Night in Jioufen view from Mt. Keelung 20130711.jpg](https://commons.wikimedia.org/wiki/File:Night_in_Jioufen_view_from_Mt._Keelung_20130711.jpg) | Taiwankengo | パブリックドメイン |
+| 黒川温泉 | [Kurokawa-Onsen Light-up.jpg](https://commons.wikimedia.org/wiki/File:Kurokawa-Onsen_Light-up.jpg) | MaedaAkihiko | CC0 |
+| 厳島神社 | [20181111 Itsukushima Shrine torii-2.jpg](https://commons.wikimedia.org/wiki/File:20181111_Itsukushima_Shrine_torii-2.jpg) | Balon Greyjoy | CC0 |
+| 伏見稲荷大社 | [Fushimi Inari Torii 4](https://commons.wikimedia.org/wiki/File:20181110_Fushimi_Inari_Torii_4.jpg)・[1](https://commons.wikimedia.org/wiki/File:20181110_Fushimi_Inari_Torii_1.jpg)・[5](https://commons.wikimedia.org/wiki/File:20181110_Fushimi_Inari_Torii_5.jpg) | Balon Greyjoy | CC0 |
+| 古宇利島 | [Kouri-Beach.jpg](https://commons.wikimedia.org/wiki/File:Kouri-Beach.jpg) | MaedaAkihiko | CC0 |
+| 古宇利島 | [Kouri Island.JPG](https://commons.wikimedia.org/wiki/File:Kouri_Island.JPG) | Kugel | パブリックドメイン |
+
+ローカル環境で E2E を実行すると `e2e_` のテストデータが混ざるため、人に見せる前は次のように入れ直す（開発用 DB のユーザー・投稿はすべて消える）。
+
+```powershell
+docker exec tripdiary-db psql -U tripdiary -d tripdiary -c "TRUNCATE users RESTART IDENTITY CASCADE;"
+$env:DEMO_PASSWORD = '<パスワード>'
+$env:OWNER_PASSWORD = '<作者用アカウントのパスワード>'
+node infra/demo-seed.mjs http://localhost:8080
+Remove-Item Env:DEMO_PASSWORD, Env:OWNER_PASSWORD
+```
+
+S3Mock に残った古い写真は、孤立ファイル削除（毎時）で片付く。
 
 ### 3.4 データを空にする
 
