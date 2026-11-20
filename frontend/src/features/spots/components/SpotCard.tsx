@@ -1,4 +1,5 @@
 import { MessageCircle } from 'lucide-react'
+import { motion, type Transition, type Variants } from 'motion/react'
 import { Link } from 'react-router'
 import { UserAvatar } from '@/components/UserAvatar'
 import { Badge } from '@/components/ui/badge'
@@ -8,6 +9,7 @@ import { HelpfulButton } from '@/features/helpful/components/HelpfulButton'
 import { LikeButton } from '@/features/likes/components/LikeButton'
 import { StatusSelect } from '@/features/status/components/StatusSelect'
 import { formatDate } from '@/lib/date'
+import { cn } from '@/lib/utils'
 import type { SpotSummary } from '../types'
 import { AreaTagBadges } from './AreaTagBadges'
 import { TempleFeatureBadges, TempleRatingSummary } from './TempleReview'
@@ -15,15 +17,26 @@ import { TempleFeatureBadges, TempleRatingSummary } from './TempleReview'
 /** 一覧のスポットカード。 */
 export function SpotCard({ spot }: { spot: SpotSummary }) {
   return (
-    <Card className="h-full">
+    <MotionCard
+      // ホバーでカードを少し浮かせ、カバー写真をわずかにズームする（タッチ端末では発火しない）
+      initial="rest"
+      whileHover="hover"
+      variants={cardHover}
+      transition={hoverSpring}
+      className={cn('h-full transition-shadow hover:shadow-lg', spot.coverPhotoUrl && 'pt-0')}
+    >
       {spot.coverPhotoUrl && (
-        // タイトルが見出しリンクになっているため、カバー写真は装飾扱い（読み上げの重複を避ける）
-        <img
-          src={spot.coverPhotoUrl}
-          alt=""
-          loading="lazy"
-          className="aspect-video w-full bg-muted object-cover"
-        />
+        <div className="overflow-hidden rounded-t-xl">
+          {/* タイトルが見出しリンクになっているため、カバー写真は装飾扱い（読み上げの重複を避ける） */}
+          <motion.img
+            src={spot.coverPhotoUrl}
+            alt=""
+            loading="lazy"
+            variants={imageZoom}
+            transition={hoverSpring}
+            className="aspect-video w-full bg-muted object-cover"
+          />
+        </div>
       )}
       <CardHeader>
         <CardTitle>
@@ -66,6 +79,12 @@ export function SpotCard({ spot }: { spot: SpotSummary }) {
           </span>
         </div>
       </CardContent>
-    </Card>
+    </MotionCard>
   )
 }
+
+const MotionCard = motion.create(Card)
+
+const cardHover: Variants = { rest: { y: 0 }, hover: { y: -4 } }
+const imageZoom: Variants = { rest: { scale: 1 }, hover: { scale: 1.05 } }
+const hoverSpring: Transition = { type: 'spring', stiffness: 300, damping: 24 }

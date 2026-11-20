@@ -3,7 +3,7 @@ import { ThumbsUp } from 'lucide-react'
 import { useState } from 'react'
 import { useLocation, useNavigate } from 'react-router'
 import { toast } from 'sonner'
-import { Button } from '@/components/ui/button'
+import { TapButton } from '@/components/TapButton'
 import { useAuth } from '@/features/auth/useAuth'
 import { cn } from '@/lib/utils'
 import { applyHelpfulResult, setHelpful } from '../api'
@@ -49,7 +49,7 @@ export function HelpfulButton({ spotId, helpful, helpfulCount, size = 'sm' }: He
   }
 
   return (
-    <Button
+    <TapButton
       type="button"
       variant={shown.helpful ? 'secondary' : 'outline'}
       size={size}
@@ -61,6 +61,6 @@ export function HelpfulButton({ spotId, helpful, helpfulCount, size = 'sm' }: He
       <ThumbsUp aria-hidden className={cn(shown.helpful && 'fill-sky-500 text-sky-600')} />
       参考になった
       <span className="tabular-nums">{shown.helpfulCount}</span>
-    </Button>
+    </TapButton>
   )
 }

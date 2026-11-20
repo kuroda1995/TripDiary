@@ -1,7 +1,10 @@
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { MapPinCheck } from 'lucide-react'
+import { motion } from 'motion/react'
 import { toast } from 'sonner'
+import { TapButton } from '@/components/TapButton'
 import { Button } from '@/components/ui/button'
+import { cardRevealProps } from '@/lib/motion'
 import { SpotCard } from '@/features/spots/components/SpotCard'
 import type { SpotStatus } from '@/features/spots/types'
 import { formatDate, todayInJapan } from '@/lib/date'
@@ -48,8 +51,8 @@ export function MyStatusList({ status, label }: { status: SpotStatus; label: str
   return (
     <div className="space-y-6">
       <ul aria-label={label} className="grid gap-4 sm:grid-cols-2">
-        {items.map((item) => (
-          <li key={item.spot.id} className="space-y-2">
+        {items.map((item, index) => (
+          <motion.li key={item.spot.id} className="space-y-2" {...cardRevealProps(index)}>
             <SpotCard spot={item.spot} />
             <div className="flex items-center justify-between gap-2 px-1 text-xs text-muted-foreground">
               <span>
@@ -59,7 +62,7 @@ export function MyStatusList({ status, label }: { status: SpotStatus; label: str
               </span>
               {status === 'WANT_TO_GO' && <VisitedButton spotId={item.spot.id} title={item.spot.title} />}
             </div>
-          </li>
+          </motion.li>
         ))}
       </ul>
       {query.hasNextPage && (
@@ -91,7 +94,7 @@ function VisitedButton({ spotId, title }: { spotId: number; title: string }) {
   })
 
   return (
-    <Button
+    <TapButton
       type="button"
       size="sm"
       onClick={() => mutation.mutate()}
@@ -100,6 +103,6 @@ function VisitedButton({ spotId, title }: { spotId: number; title: string }) {
     >
       <MapPinCheck aria-hidden />
       行った！
-    </Button>
+    </TapButton>
   )
 }

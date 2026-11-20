@@ -1,6 +1,8 @@
 import { useInfiniteQuery, type QueryKey } from '@tanstack/react-query'
+import { motion } from 'motion/react'
 import type { ReactNode } from 'react'
 import { Button } from '@/components/ui/button'
+import { cardRevealProps } from '@/lib/motion'
 import type { SpotPage } from '../types'
 import { SpotCard } from './SpotCard'
 
@@ -70,10 +72,10 @@ export function SpotList({
   return (
     <div className="space-y-6">
       <ul aria-label={label} className="grid gap-4 sm:grid-cols-2">
-        {spots.map((spot) => (
-          <li key={spot.id}>
+        {spots.map((spot, index) => (
+          <motion.li key={spot.id} {...cardRevealProps(index)}>
             <SpotCard spot={spot} />
-          </li>
+          </motion.li>
         ))}
       </ul>
       {query.hasNextPage && (
