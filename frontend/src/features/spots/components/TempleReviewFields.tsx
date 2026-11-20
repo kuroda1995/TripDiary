@@ -31,7 +31,8 @@ function RatingInput({ label, value, onChange }: RatingInputProps) {
       </span>
       <div role="radiogroup" aria-labelledby={labelId} className="flex items-center gap-0.5">
         {SCORES.map((score) => (
-          <label key={score} className="cursor-pointer">
+          // 透明なラジオボタンを星に重ね、星全体を押せる・キーボードで選べるようにする
+          <label key={score} className="relative inline-flex cursor-pointer">
             <input
               type="radio"
               name={name}
@@ -39,7 +40,7 @@ function RatingInput({ label, value, onChange }: RatingInputProps) {
               checked={value === score}
               onChange={() => onChange(score)}
               aria-label={`${score}点`}
-              className="peer sr-only"
+              className="peer absolute inset-0 m-0 size-full cursor-pointer opacity-0"
             />
             <Star
               aria-hidden

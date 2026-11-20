@@ -52,7 +52,9 @@ test.describe('お寺の評価・特徴タグ', () => {
     await expect(page.getByRole('link', { name: title })).toBeVisible()
 
     // タグを足して条件に合わなくなると表示されない（AND 条件）
-    await page.getByRole('checkbox', { name: '駐車場あり' }).check()
+    // チェック状態は URL から作るため（反映が非同期）、check() ではなく click() して状態を待つ
+    await page.getByRole('checkbox', { name: '駐車場あり' }).click()
+    await expect(page.getByRole('checkbox', { name: '駐車場あり' })).toBeChecked()
     await expect(page).toHaveURL(/features=GOSHUIN%2CPARKING|features=GOSHUIN,PARKING/)
     await expect(page.getByRole('link', { name: title })).toHaveCount(0)
   })
