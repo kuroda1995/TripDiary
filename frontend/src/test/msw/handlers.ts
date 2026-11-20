@@ -48,7 +48,7 @@ export const areasFixture = [
   },
 ]
 
-export const otherUser = { id: 2, username: 'hanako', displayName: 'はなこ', avatarUrl: null }
+export const otherUser = { id: 2, username: 'hanako', displayName: 'はなこ', avatarUrl: null, badge: null }
 
 export function spotFixture(overrides: Record<string, unknown> = {}) {
   return {
@@ -64,6 +64,8 @@ export function spotFixture(overrides: Record<string, unknown> = {}) {
     photos: [],
     likeCount: 0,
     likedByMe: false,
+    helpfulCount: 0,
+    helpfulByMe: false,
     myStatus: null,
     commentCount: 0,
     author: {
@@ -71,6 +73,7 @@ export function spotFixture(overrides: Record<string, unknown> = {}) {
       username: meFixture.username,
       displayName: meFixture.displayName,
       avatarUrl: null,
+      badge: null,
     },
     createdAt: '2026-10-04T09:00:00Z',
     updatedAt: '2026-10-04T09:00:00Z',
@@ -147,6 +150,8 @@ export function profileFixture(overrides: Record<string, unknown> = {}) {
     followingCount: 0,
     followerCount: 0,
     followedByMe: false,
+    activityCount: 0,
+    badge: null,
     ...overrides,
   }
 }

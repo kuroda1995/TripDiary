@@ -35,6 +35,8 @@ erDiagram
     users ||--o{ board_topics : "トピックを作る"
     users ||--o{ board_replies : "返信する"
     board_topics ||--o{ board_replies : "受ける"
+    users ||--o{ spot_helpfuls : "参考になったを付ける"
+    spots ||--o{ spot_helpfuls : "受ける"
 
     users {
         BIGINT id PK
@@ -46,6 +48,7 @@ erDiagram
         VARCHAR_512 avatar_s3_key "NULL可"
         TIMESTAMPTZ created_at
         TIMESTAMPTZ updated_at
+        INTEGER activity_count "称号用（トリガーで保つ）"
     }
 
     refresh_tokens {
@@ -147,6 +150,12 @@ erDiagram
         TEXT body "1〜1000文字"
         TIMESTAMPTZ created_at
     }
+
+    spot_helpfuls {
+        BIGINT user_id PK,FK
+        BIGINT spot_id PK,FK
+        TIMESTAMPTZ created_at
+    }
 ```
 
 > Mermaid の erDiagram は型名に `(` `)` を使えないため、`VARCHAR(255)` を `VARCHAR_255` と表記している。
@@ -198,6 +207,7 @@ erDiagram
 | スポット ⇔ エリアタグ | N : M（1スポットに1〜5タグ） | `spot_area_tags` |
 | エリアタグ → エリアタグ | 1 : N（自己参照） | `area_tags.parent_id` |
 | ユーザー ⇔ スポット（行ってみたい！） | N : M | `spot_likes` |
+| ユーザー ⇔ スポット（参考になった） | N : M | `spot_helpfuls` |
 | ユーザー ⇔ スポット（訪問済み/行きたい） | N : M（1組につき1ステータス） | `user_spot_statuses` |
 | ユーザー → コメント ← スポット | 1 : N / 1 : N | `comments.user_id`, `comments.spot_id` |
 | ユーザー ⇔ ユーザー（フォロー） | N : M（自己参照） | `follows` |

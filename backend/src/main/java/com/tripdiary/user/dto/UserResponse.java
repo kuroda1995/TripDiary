@@ -1,5 +1,6 @@
 package com.tripdiary.user.dto;
 
+import com.tripdiary.user.CommunityBadge;
 import com.tripdiary.user.User;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.function.UnaryOperator;
@@ -10,14 +11,24 @@ public record UserResponse(
         @Schema(example = "42") long id,
         @Schema(example = "taro_trip") String username,
         @Schema(example = "旅するタロウ") String displayName,
-        @Schema(description = "アイコン画像の URL（未設定は null）", nullable = true) String avatarUrl) {
+        @Schema(description = "アイコン画像の URL（未設定は null）", nullable = true) String avatarUrl,
+        @Schema(
+                        description =
+                                "コミュニティ称号（投稿・コメント・掲示板の書き込みの合計: 1件以上 BEGINNER / 3件以上 PILGRIM /"
+                                        + " 5件以上 MASTER。0件は null）",
+                        nullable = true)
+                CommunityBadge badge) {
 
     /**
      * @param photoUrl S3 キーから配信 URL を作る関数
      */
     public static UserResponse from(User user, UnaryOperator<String> photoUrl) {
         return new UserResponse(
-                user.getId(), user.getUsername(), user.getDisplayName(), avatarUrl(user, photoUrl));
+                user.getId(),
+                user.getUsername(),
+                user.getDisplayName(),
+                avatarUrl(user, photoUrl),
+                CommunityBadge.of(user.getActivityCount()));
     }
 
     /** アイコンの配信 URL（未設定なら null）。 */

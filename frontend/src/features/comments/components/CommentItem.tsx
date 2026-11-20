@@ -14,6 +14,7 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
 import { Button } from '@/components/ui/button'
+import { CommunityBadgeLabel } from '@/features/community/components/CommunityBadgeLabel'
 import { formatDateTime } from '@/lib/date'
 import { useDeleteComment, useEditComment, type Comment } from '../api'
 import { CommentForm } from './CommentForm'
@@ -60,6 +61,7 @@ export function CommentItem({ comment, isMine, isOnMySpot }: CommentItemProps) {
           />
           {comment.author.displayName}
         </Link>
+        <CommunityBadgeLabel badge={comment.author.badge} />
         <time dateTime={comment.createdAt} className="text-xs text-muted-foreground">
           {formatDateTime(comment.createdAt)}
         </time>

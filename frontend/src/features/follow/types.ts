@@ -1,3 +1,5 @@
+import type { CommunityBadge } from '@/features/spots/types'
+
 /** プロフィール（GET /api/v1/users/{username}）。 */
 export type Profile = {
   id: number
@@ -11,6 +13,9 @@ export type Profile = {
   followerCount: number
   /** 自分がフォローしているか（未ログイン・本人は false） */
   followedByMe: boolean
+  /** コミュニティ活動数（投稿・コメント・掲示板の書き込みの合計） */
+  activityCount: number
+  badge: CommunityBadge | null
 }
 
 /** PUT / DELETE /api/v1/users/{username}/follow のレスポンス。 */

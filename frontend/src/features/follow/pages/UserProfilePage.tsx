@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router'
 import { UserAvatar } from '@/components/UserAvatar'
 import { buttonVariants } from '@/components/ui/button'
 import { useAuth } from '@/features/auth/useAuth'
+import { CommunityBadgeLabel } from '@/features/community/components/CommunityBadgeLabel'
 import { fetchUserSpots, spotKeys } from '@/features/spots/api'
 import { SpotList } from '@/features/spots/components/SpotList'
 import { ApiError } from '@/lib/apiClient'
@@ -69,7 +70,10 @@ function ProfileHeader({ profile, isMe }: { profile: Profile; isMe: boolean }) {
           <h1 id="profile-heading" className="text-2xl font-bold break-words">
             {profile.displayName}
           </h1>
-          <p className="text-sm text-muted-foreground">@{profile.username}</p>
+          <p className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+            @{profile.username}
+            <CommunityBadgeLabel badge={profile.badge} />
+          </p>
         </div>
         {isMe ? (
           <Link to="/settings/profile" className={buttonVariants({ variant: 'outline', size: 'sm' })}>
@@ -93,6 +97,9 @@ function ProfileHeader({ profile, isMe }: { profile: Profile; isMe: boolean }) {
           <Link to={`/users/${profile.username}/followers`} className={countLink}>
             <Count value={profile.followerCount} label="フォロワー" />
           </Link>
+        </li>
+        <li title="投稿・コメント・掲示板の書き込みの合計">
+          <Count value={profile.activityCount} label="コミュニティ活動" />
         </li>
       </ul>
     </section>

@@ -123,6 +123,7 @@ erDiagram
 | 10 | `user_spot_statuses` | ユーザー別スポットステータス | 訪問済み / 行きたい |
 | 11 | `board_topics` | コミュニティ広場のトピック | 掲示板（V7） |
 | 12 | `board_replies` | コミュニティ広場の返信 | 掲示板（V7） |
+| 13 | `spot_helpfuls` | 参考になった | 参考になった（V8） |
 
 ---
 
@@ -143,10 +144,13 @@ erDiagram
 | `avatar_s3_key` | `VARCHAR(512)` | | `NULL` | アイコン画像の S3 オブジェクトキー |
 | `created_at` | `TIMESTAMPTZ` | NN | `now()` | 作成日時 |
 | `updated_at` | `TIMESTAMPTZ` | NN | `now()` | 更新日時 |
+| `activity_count` | `INTEGER` | NN, CHECK（`>= 0`） | `0` | コミュニティ活動数（投稿・コメント・掲示板のトピック・返信の合計。V8。非正規化） |
 
 インデックス:
 - `uq_users_email_lower` : `UNIQUE (lower(email))` — 大文字小文字違いの重複登録を防止
 - `uq_users_username_lower` : `UNIQUE (lower(username))`
+
+> **`activity_count` はトリガー（`spots` / `comments` / `board_topics` / `board_replies` の INSERT / DELETE の後に投稿者の値を ±1）で保つ。** アプリからは書き込まない（JPA でも `insertable = false, updatable = false`）。称号（[11_community_reactions.md](features/11_community_reactions.md)）はユーザー名を出すすべての画面に表示するため、表示のたびに4テーブルを数えずに済むよう列で持つ。`like_count` と同じく、連鎖削除（他人のスポットの削除で自分のコメントが消える等）でもずれないよう DB 側で保つ。
 
 ### 3.2 `refresh_tokens`（リフレッシュトークン）
 
@@ -356,6 +360,20 @@ V7 で追加。
 
 > 返信数は列に持たず、一覧に出すトピックの分を1回の SQL（`GROUP BY topic_id`）でまとめて数える。並び替えには使わないため、`like_count` のような非正規化はしていない。
 
+### 3.13 `spot_helpfuls`（参考になった）
+
+V8 で追加。`spot_likes` と同じ形。
+
+| カラム名 | 型 | 制約 | デフォルト | 説明 |
+| --- | --- | --- | --- | --- |
+| `user_id` | `BIGINT` | PK, FK → `users.id` ON DELETE CASCADE | | 付けたユーザー |
+| `spot_id` | `BIGINT` | PK, FK → `spots.id` ON DELETE CASCADE | | スポット |
+| `created_at` | `TIMESTAMPTZ` | NN | `now()` | 付けた日時 |
+
+インデックス:
+- 主キー: `(user_id, spot_id)` — 1ユーザー1スポットにつき1回（`INSERT ... ON CONFLICT DO NOTHING` で冪等）
+- `idx_spot_helpfuls_spot_id` : `(spot_id)` — 件数の集計（一覧・詳細の取得 SQL でまとめて数える）
+
 ---
 
 ## 4. リレーション一覧
@@ -379,6 +397,8 @@ V7 で追加。
 | `users` | `board_topics` | `user_id` | 1 : N | CASCADE |
 | `users` | `board_replies` | `user_id` | 1 : N | CASCADE |
 | `board_topics` | `board_replies` | `topic_id` | 1 : N | CASCADE |
+| `users` | `spot_helpfuls` | `user_id` | 1 : N | CASCADE |
+| `spots` | `spot_helpfuls` | `spot_id` | 1 : N | CASCADE |
 
 多対多の関係:
 - `users` ⇔ `spots`（行ってみたい！）: `spot_likes`

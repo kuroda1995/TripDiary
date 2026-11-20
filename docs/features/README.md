@@ -14,6 +14,7 @@ TripDiary の各機能の仕様をまとめたドキュメントです。全体�
 | 8 | [スポットのステータス管理](08_spot_status.md) | STS | `user_spot_statuses` |
 | 9 | [お寺の評価・特徴タグ](09_temple_review.md) | TMPL | `spots`（`rating_*` / `temple_features`） |
 | 10 | [お寺コミュニティ広場（掲示板）](10_community_board.md) | BRD | `board_topics`, `board_replies` |
+| 11 | [参考になった・行きたい・コミュニティ称号](11_community_reactions.md) | CMTY | `spot_helpfuls`, `users.activity_count` |
 
 ## 各ドキュメントの構成
 

@@ -4,8 +4,11 @@ import { Badge } from '@/components/ui/badge'
 import { buttonVariants } from '@/components/ui/button'
 import { useAuth } from '@/features/auth/useAuth'
 import { CommentSection } from '@/features/comments/components/CommentSection'
+import { CommunityBadgeLabel } from '@/features/community/components/CommunityBadgeLabel'
+import { HelpfulButton } from '@/features/helpful/components/HelpfulButton'
 import { LikeButton } from '@/features/likes/components/LikeButton'
 import { StatusSelect } from '@/features/status/components/StatusSelect'
+import { WantToGoButton } from '@/features/status/components/WantToGoButton'
 import { ApiError } from '@/lib/apiClient'
 import { formatDate, formatDateTime } from '@/lib/date'
 import { useSpot } from '../api'
@@ -73,6 +76,13 @@ function SpotDetail({ spotId }: { spotId: number }) {
         <TempleFeatureBadges features={spot.templeFeatures} />
         <div className="flex flex-wrap items-center gap-3">
           <LikeButton spotId={spot.id} liked={spot.likedByMe} likeCount={spot.likeCount} size="default" />
+          <HelpfulButton
+            spotId={spot.id}
+            helpful={spot.helpfulByMe}
+            helpfulCount={spot.helpfulCount}
+            size="default"
+          />
+          <WantToGoButton spotId={spot.id} status={spot.myStatus} />
           <StatusSelect spotId={spot.id} status={spot.myStatus} showLabel />
         </div>
       </header>
@@ -89,7 +99,7 @@ function SpotDetail({ spotId }: { spotId: number }) {
 
       <dl className="grid grid-cols-[max-content_1fr] gap-x-6 gap-y-1 border-t pt-4 text-sm">
         <dt className="text-muted-foreground">投稿者</dt>
-        <dd>
+        <dd className="flex flex-wrap items-center gap-2">
           <Link
             to={`/users/${spot.author.username}`}
             className="inline-flex items-center gap-1.5 hover:underline"
@@ -97,6 +107,7 @@ function SpotDetail({ spotId }: { spotId: number }) {
             <UserAvatar displayName={spot.author.displayName} avatarUrl={spot.author.avatarUrl} size="sm" />
             {spot.author.displayName}
           </Link>
+          <CommunityBadgeLabel badge={spot.author.badge} />
         </dd>
         {spot.visitedOn && (
           <>

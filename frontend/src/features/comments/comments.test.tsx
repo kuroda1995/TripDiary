@@ -15,8 +15,9 @@ const me = {
   username: meFixture.username,
   displayName: meFixture.displayName,
   avatarUrl: null,
+  badge: null,
 }
-const third = { id: 3, username: 'jiro', displayName: '次郎', avatarUrl: null }
+const third = { id: 3, username: 'jiro', displayName: '次郎', avatarUrl: null, badge: null }
 
 function commentFixture(
   id: number,
