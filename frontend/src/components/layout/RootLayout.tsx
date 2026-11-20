@@ -1,4 +1,4 @@
-import { Search } from 'lucide-react'
+import { MessagesSquare, Search } from 'lucide-react'
 import { Link, Outlet } from 'react-router'
 import { buttonVariants } from '@/components/ui/button'
 import { Toaster } from 'sonner'
@@ -16,10 +16,17 @@ export function RootLayout() {
               <Link to="/" className="text-lg font-bold">
                 TripDiary
               </Link>
-              <Link to="/search" className={buttonVariants({ variant: 'ghost', size: 'sm' })}>
-                <Search aria-hidden />
-                探す
-              </Link>
+              <nav aria-label="メイン" className="flex items-center gap-1">
+                <Link to="/search" className={buttonVariants({ variant: 'ghost', size: 'sm' })}>
+                  <Search aria-hidden />
+                  探す
+                </Link>
+                <Link to="/community" className={buttonVariants({ variant: 'ghost', size: 'sm' })}>
+                  <MessagesSquare aria-hidden />
+                  {/* 狭い画面ではアイコンだけにする（読み上げ名は常に「コミュニティ広場」） */}
+                  <span className="sr-only sm:not-sr-only">コミュニティ広場</span>
+                </Link>
+              </nav>
             </div>
             <AuthMenu />
           </div>
