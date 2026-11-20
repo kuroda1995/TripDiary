@@ -221,7 +221,8 @@ const spotDefs = [
     photos: ['Kouri-Beach.jpg', 'Kouri Island.JPG'],
   },
   // ---- お寺の参拝記録（5段階評価・特徴タグ付き。docs/features/09_temple_review.md） ----
-  // 写真は付けない（ライセンスを確認した CC0・パブリックドメインの写真を用意できたら photos に足す）
+  // 瑞龍寺（高岡）は Commons にお寺を写した CC0・パブリックドメインの写真がないため、写真を付けない
+  // （「瑞龍寺」で見つかる CC0 の写真は、岐阜の金宝山 瑞龍寺など別のお寺）
   {
     key: 'zuiryuji',
     by: 'kenta',
@@ -245,6 +246,7 @@ const spotDefs = [
     visitedOn: '2026-03-02',
     ratings: { tranquility: 4, beauty: 5, worship: 3, access: 4 },
     templeFeatures: ['GOSHUIN', 'PARKING', 'GARDEN', 'CULTURAL_PROPERTY', 'QUIET'],
+    photos: ['Masayoshi Yanase 2015 (Unsplash).jpg'],
   },
   {
     key: 'hasedera',
@@ -257,6 +259,10 @@ const spotDefs = [
     visitedOn: '2026-06-14',
     ratings: { tranquility: 3, beauty: 5, worship: 5, access: 3 },
     templeFeatures: ['GOSHUIN', 'GARDEN'],
+    photos: [
+      'Hase-dera Temple, Kamakura, Japan (14645090803).jpg',
+      'Rock garden façade of the Inner Buddha Hall, Hase-dera, Kamakura, 2016.jpg',
+    ],
   },
   {
     key: 'kiyomizu',
@@ -269,6 +275,7 @@ const spotDefs = [
     visitedOn: '2026-11-08',
     ratings: { tranquility: 2, beauty: 5, worship: 4, access: 2 },
     templeFeatures: ['GOSHUIN', 'CULTURAL_PROPERTY'],
+    photos: ['Kiyomizu-dera autumn night.jpg', 'Kiyomizu-dera - Kiyomizu-dera311.jpg'],
   },
   {
     key: 'private',

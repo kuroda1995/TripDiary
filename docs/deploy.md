@@ -145,7 +145,7 @@ Remove-Item Env:E2E_BASE_URL
 
 ### 3.3 サンプルデータ
 
-メンターさんが見て操作できるよう、API を通してサンプルデータ（ユーザー3人〈アイコン付き〉・投稿14件〈うち非公開1件、お寺の参拝記録4件（瑞龍寺・龍安寺・長谷寺・清水寺。5段階評価・特徴タグ付き・写真なし）〉・写真14枚・コメント・行ってみたい！・参考になった・フォロー・行った！/行きたい・お寺コミュニティ広場のトピック3件と返信・テーマ別コミュニティ4つ〈北陸・富山のお寺巡り同好会／限定御朱印情報シェアの会／枯山水・日本庭園を愛でる会／はじめてのお寺巡り相談室。メンバー・トピック・返信付き〉）を入れる。3人とも書き込みが5件以上あるため、称号は「お寺マイスター」になる。ゲスト（ハルカ）は「限定御朱印情報シェアの会」のオーナーで、「はじめてのお寺巡り相談室」には参加していない（参加ボタンを試せる）。ローカル環境（`http://localhost:8080`）にも同じ手順で入れられる。
+メンターさんが見て操作できるよう、API を通してサンプルデータ（ユーザー3人〈アイコン付き〉・投稿14件〈うち非公開1件、お寺の参拝記録4件（瑞龍寺・龍安寺・長谷寺・清水寺。5段階評価・特徴タグ付き。瑞龍寺は写真なし）〉・写真19枚・コメント・行ってみたい！・参考になった・フォロー・行った！/行きたい・お寺コミュニティ広場のトピック3件と返信・テーマ別コミュニティ4つ〈北陸・富山のお寺巡り同好会／限定御朱印情報シェアの会／枯山水・日本庭園を愛でる会／はじめてのお寺巡り相談室。メンバー・トピック・返信付き〉）を入れる。3人とも書き込みが5件以上あるため、称号は「お寺マイスター」になる。ゲスト（ハルカ）は「限定御朱印情報シェアの会」のオーナーで、「はじめてのお寺巡り相談室」には参加していない（参加ボタンを試せる）。ローカル環境（`http://localhost:8080`）にも同じ手順で入れられる。
 
 ```powershell
 $env:DEMO_PASSWORD = '<3ユーザー共通のパスワード>'   # コミットしない
@@ -188,6 +188,12 @@ powershell -ExecutionPolicy Bypass -File infra/deploy.ps1
 | 伏見稲荷大社 | [Fushimi Inari Torii 4](https://commons.wikimedia.org/wiki/File:20181110_Fushimi_Inari_Torii_4.jpg)・[1](https://commons.wikimedia.org/wiki/File:20181110_Fushimi_Inari_Torii_1.jpg)・[5](https://commons.wikimedia.org/wiki/File:20181110_Fushimi_Inari_Torii_5.jpg) | Balon Greyjoy | CC0 |
 | 古宇利島 | [Kouri-Beach.jpg](https://commons.wikimedia.org/wiki/File:Kouri-Beach.jpg) | MaedaAkihiko | CC0 |
 | 古宇利島 | [Kouri Island.JPG](https://commons.wikimedia.org/wiki/File:Kouri_Island.JPG) | Kugel | パブリックドメイン |
+| 龍安寺 | [Masayoshi Yanase 2015 (Unsplash).jpg](https://commons.wikimedia.org/wiki/File:Masayoshi_Yanase_2015_(Unsplash).jpg) | Masayoshi Yanase | CC0 |
+| 長谷寺 | [Hase-dera Temple, Kamakura, Japan (14645090803).jpg](https://commons.wikimedia.org/wiki/File:Hase-dera_Temple,_Kamakura,_Japan_(14645090803).jpg) | Mustang Joe | CC0 |
+| 長谷寺 | [Rock garden façade of the Inner Buddha Hall, Hase-dera, Kamakura, 2016.jpg](https://commons.wikimedia.org/wiki/File:Rock_garden_façade_of_the_Inner_Buddha_Hall,_Hase-dera,_Kamakura,_2016.jpg) | DimiTalen | CC0 |
+| 清水寺 | [Kiyomizu-dera autumn night.jpg](https://commons.wikimedia.org/wiki/File:Kiyomizu-dera_autumn_night.jpg)、[Kiyomizu-dera311.jpg](https://commons.wikimedia.org/wiki/File:Kiyomizu-dera_-_Kiyomizu-dera311.jpg) | lumoplank | CC0 |
+
+瑞龍寺（高岡）は、Commons にお寺を写した CC0・パブリックドメインの写真がないため写真を付けていない。
 
 ローカル環境で E2E を実行すると `e2e_` のテストデータが混ざるため、人に見せる前は次のように入れ直す（開発用 DB のユーザー・投稿はすべて消える）。
 
