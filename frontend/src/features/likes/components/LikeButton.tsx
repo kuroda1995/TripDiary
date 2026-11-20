@@ -3,7 +3,7 @@ import { Heart } from 'lucide-react'
 import { useState } from 'react'
 import { useLocation, useNavigate } from 'react-router'
 import { toast } from 'sonner'
-import { Button } from '@/components/ui/button'
+import { TapButton } from '@/components/TapButton'
 import { useAuth } from '@/features/auth/useAuth'
 import { cn } from '@/lib/utils'
 import { applyLikeResult, setLike } from '../api'
@@ -52,7 +52,7 @@ export function LikeButton({ spotId, liked, likeCount, size = 'sm' }: LikeButton
   }
 
   return (
-    <Button
+    <TapButton
       type="button"
       variant={shown.liked ? 'secondary' : 'outline'}
       size={size}
@@ -65,6 +65,6 @@ export function LikeButton({ spotId, liked, likeCount, size = 'sm' }: LikeButton
       <Heart aria-hidden className={cn(shown.liked && 'fill-rose-500 text-rose-500')} />
       行ってみたい！
       <span className="tabular-nums">{shown.likeCount}</span>
-    </Button>
+    </TapButton>
   )
 }

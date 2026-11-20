@@ -1,11 +1,13 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Bookmark } from 'lucide-react'
+import { motion } from 'motion/react'
 import { useId, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router'
 import { toast } from 'sonner'
-import { Button } from '@/components/ui/button'
+import { TapButton } from '@/components/TapButton'
 import { useAuth } from '@/features/auth/useAuth'
 import type { SpotStatus } from '@/features/spots/types'
+import { tapScale, tapSpring } from '@/lib/motion'
 import { cn } from '@/lib/utils'
 import { applyStatusChange, setSpotStatus } from '../api'
 
@@ -45,7 +47,7 @@ export function StatusSelect({ spotId, status, showLabel = false }: StatusSelect
 
   if (auth.status !== 'authenticated') {
     return (
-      <Button
+      <TapButton
         type="button"
         variant="outline"
         size="sm"
@@ -54,7 +56,7 @@ export function StatusSelect({ spotId, status, showLabel = false }: StatusSelect
       >
         <Bookmark aria-hidden />
         マイリストに追加
-      </Button>
+      </TapButton>
     )
   }
 
@@ -65,7 +67,8 @@ export function StatusSelect({ spotId, status, showLabel = false }: StatusSelect
       <label htmlFor={selectId} className={cn(!showLabel && 'sr-only')}>
         マイリスト
       </label>
-      <span className="relative inline-flex items-center">
+      {/* 選択を押した瞬間にボタンと同じく弾ませる */}
+      <motion.span className="relative inline-flex items-center" whileTap={tapScale} transition={tapSpring}>
         <Bookmark
           aria-hidden
           className={cn(
@@ -89,7 +92,7 @@ export function StatusSelect({ spotId, status, showLabel = false }: StatusSelect
           <option value="WANT_TO_GO">{STATUS_LABELS.WANT_TO_GO}</option>
           <option value="VISITED">{STATUS_LABELS.VISITED}</option>
         </select>
-      </span>
+      </motion.span>
     </div>
   )
 }

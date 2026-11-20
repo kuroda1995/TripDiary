@@ -3,7 +3,7 @@ import { Bookmark } from 'lucide-react'
 import { useState } from 'react'
 import { useLocation, useNavigate } from 'react-router'
 import { toast } from 'sonner'
-import { Button } from '@/components/ui/button'
+import { TapButton } from '@/components/TapButton'
 import { useAuth } from '@/features/auth/useAuth'
 import type { SpotStatus } from '@/features/spots/types'
 import { cn } from '@/lib/utils'
@@ -45,7 +45,7 @@ export function WantToGoButton({ spotId, status }: { spotId: number; status: Spo
   }
 
   return (
-    <Button
+    <TapButton
       type="button"
       variant={saved ? 'secondary' : 'outline'}
       aria-pressed={saved}
@@ -55,6 +55,6 @@ export function WantToGoButton({ spotId, status }: { spotId: number; status: Spo
     >
       <Bookmark aria-hidden className={cn(saved && 'fill-amber-400 text-amber-500')} />
       行きたい
-    </Button>
+    </TapButton>
   )
 }
