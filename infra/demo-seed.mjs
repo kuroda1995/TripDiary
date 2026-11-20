@@ -1,4 +1,5 @@
-// デモ環境にサンプルデータ（ユーザー・アイコン・投稿・写真・コメント・行ってみたい！・フォロー・ステータス）を入れる（docs/deploy.md）。
+// デモ環境にサンプルデータ（ユーザー・アイコン・投稿・写真・コメント・行ってみたい！・参考になった・フォロー・ステータス・
+// お寺の評価付きの参拝記録・お寺コミュニティ広場のトピックと返信）を入れる（docs/deploy.md）。
 //
 //   $env:DEMO_PASSWORD = '...'   # 3ユーザー共通のパスワード（英字と数字を含む8文字以上）。コミットしないこと
 //   $env:OWNER_PASSWORD = '...'  # 任意。設定すると、作者が操作する用のアカウント（kuro@example.com）も作る
@@ -219,6 +220,56 @@ const spotDefs = [
     visitedOn: '2026-10-26',
     photos: ['Kouri-Beach.jpg', 'Kouri Island.JPG'],
   },
+  // ---- お寺の参拝記録（5段階評価・特徴タグ付き。docs/features/09_temple_review.md） ----
+  // 写真は付けない（ライセンスを確認した CC0・パブリックドメインの写真を用意できたら photos に足す）
+  {
+    key: 'zuiryuji',
+    by: 'kenta',
+    title: '雪の瑞龍寺で伽藍を撮る',
+    locationName: '高岡山 瑞龍寺（富山県高岡市）',
+    areaTagIds: area('富山'),
+    impression:
+      '山門・仏殿・法堂の3棟が国宝の曹洞宗のお寺。回廊にぐるりと囲まれた伽藍は左右対称で、正面から撮ると本当に美しいです。雪の朝は人も少なく、足音が響くほどの静けさでした。御朱印は書き置きでいただきました。',
+    visitedOn: '2026-01-18',
+    ratings: { tranquility: 5, beauty: 5, worship: 4, access: 4 },
+    templeFeatures: ['GOSHUIN', 'PARKING', 'CULTURAL_PROPERTY', 'QUIET'],
+  },
+  {
+    key: 'ryoanji',
+    by: 'haruka',
+    title: '龍安寺の石庭でぼんやり',
+    locationName: '大雲山 龍安寺（京都府京都市右京区）',
+    areaTagIds: area('京都'),
+    impression:
+      '方丈の縁側に座って石庭を眺めていると、あっという間に30分。開門すぐの時間は人が少なく、ゆっくり過ごせました。鏡容池のまわりの散策路も気持ちよかったです。',
+    visitedOn: '2026-03-02',
+    ratings: { tranquility: 4, beauty: 5, worship: 3, access: 4 },
+    templeFeatures: ['GOSHUIN', 'PARKING', 'GARDEN', 'CULTURAL_PROPERTY', 'QUIET'],
+  },
+  {
+    key: 'hasedera',
+    by: 'misaki',
+    title: '紫陽花の長谷寺と由比ヶ浜の眺め',
+    locationName: '海光山 長谷寺（神奈川県鎌倉市）',
+    areaTagIds: area('神奈川'),
+    impression:
+      '紫陽花の季節に行きました。眺望散策路は整理券が出るほどの人気で、早めの時間がおすすめです。見晴台から見下ろす由比ヶ浜がきれい。観音堂の大きな観音さまにも圧倒されました。御朱印は数種類あって迷います。',
+    visitedOn: '2026-06-14',
+    ratings: { tranquility: 3, beauty: 5, worship: 5, access: 3 },
+    templeFeatures: ['GOSHUIN', 'GARDEN'],
+  },
+  {
+    key: 'kiyomizu',
+    by: 'haruka',
+    title: '紅葉の清水寺、夜間特別拝観',
+    locationName: '音羽山 清水寺（京都府京都市東山区）',
+    areaTagIds: area('京都'),
+    impression:
+      'ライトアップされた舞台と紅葉が幻想的でした。ただし坂道も境内もかなり混むので、静かに過ごしたい人は朝いちばんがおすすめ。車で行くより、バスと徒歩のほうが気楽です。御朱印は昼間にいただきました。',
+    visitedOn: '2026-11-08',
+    ratings: { tranquility: 2, beauty: 5, worship: 4, access: 2 },
+    templeFeatures: ['GOSHUIN', 'CULTURAL_PROPERTY'],
+  },
   {
     key: 'private',
     by: 'haruka',
@@ -277,15 +328,77 @@ const comments = [
   ['shirakawago', 'misaki', '緑の季節の白川郷もいいですね！近くの平瀬温泉もおすすめですよ。'],
   ['taipei', 'kenta', '九份は夕方から夜に変わる時間がいちばん好きです。'],
   ['beppu', 'haruka', '地獄蒸しプリン、気になります🍮'],
+  // お寺の投稿でのやり取り
+  ['zuiryuji', 'haruka', '雪の瑞龍寺、すごくきれいですね。駐車場は冬でも停めやすかったですか？'],
+  ['zuiryuji', 'kenta', '除雪されていて問題なかったです！朝8時台なら空いていました。'],
+  ['zuiryuji', 'misaki', '高岡なら雨晴海岸もセットで回れますね。今度行ってみます。'],
+  ['kiyomizu', 'misaki', '夜間拝観は何時ごろに行きましたか？混雑が心配で…'],
+  ['kiyomizu', 'haruka', '18時すぎに入りました。20時ごろのほうが少し空いていた気がします。'],
+  ['hasedera', 'kenta', '見晴台からの写真、いつか撮りに行きたいです📷'],
+  ['hasedera', 'misaki', 'ぜひ！紫陽花の時期は平日の朝がおすすめですよ。'],
+  ['ryoanji', 'kenta', '石庭は15個の石がどこからも全部は見えないんですよね。'],
 ]
 for (const [key, by, body] of comments) {
   await api('POST', `/spots/${spots[key]}/comments`, { token: users[by].token, body: { body } })
+}
+
+// ---- 参考になった ----
+const helpfuls = {
+  haruka: ['zuiryuji', 'hasedera'],
+  kenta: ['kiyomizu', 'ryoanji', 'hasedera'],
+  misaki: ['zuiryuji', 'kiyomizu', 'ryoanji'],
+}
+for (const [by, keys] of Object.entries(helpfuls)) {
+  for (const key of keys) await api('PUT', `/spots/${spots[key]}/helpful`, { token: users[by].token })
+}
+
+// ---- お寺コミュニティ広場（掲示板。古い順に作るので、最後に返信があったトピックが先頭になる） ----
+const topics = [
+  {
+    by: 'haruka',
+    title: '御朱印情報交換',
+    body: '最近いただいた御朱印や、限定御朱印の情報を気軽に書き込んでください。書き置きか直書きかも教えてもらえると助かります。',
+    replies: [
+      ['kenta', '瑞龍寺は書き置きでした。冬は受付が早めに終わるので注意です。'],
+      ['misaki', '長谷寺は数種類あって、季節の御朱印もありました。'],
+    ],
+  },
+  {
+    by: 'misaki',
+    title: 'おすすめのお寺相談：紅葉の時期の京都',
+    body: '11月下旬に京都へ行きます。混雑を避けつつ紅葉がきれいなお寺を教えてください。車ではなく電車とバスで回る予定です。',
+    replies: [
+      ['haruka', '清水寺は夜間拝観がきれいですが、かなり混みます。朝いちばんの東福寺もおすすめです。'],
+      ['kenta', '少し足をのばして、大原の三千院は比較的ゆったり見られました。'],
+      ['misaki', 'ありがとうございます！朝の東福寺と大原で計画してみます。'],
+    ],
+  },
+  {
+    by: 'kenta',
+    title: 'お寺で写真を撮るときのマナー',
+    body: '撮影禁止の場所や三脚の使用など、気をつけていることを共有しませんか？',
+    replies: [['haruka', '堂内は撮影禁止のところが多いので、入口の案内を必ず見るようにしています。']],
+  },
+]
+let replyCount = 0
+for (const { by, title, body, replies } of topics) {
+  const topic = await api('POST', '/board-topics', { token: users[by].token, body: { title, body } })
+  for (const [replyBy, replyBody] of replies) {
+    await api('POST', `/board-topics/${topic.id}/replies`, {
+      token: users[replyBy].token,
+      body: { body: replyBody },
+    })
+    replyCount += 1
+  }
 }
 
 // ---- 行った！・行きたい ----
 const statuses = [
   ['haruka', 'okinawa', 'WANT_TO_GO'],
   ['haruka', 'kurokawa', 'WANT_TO_GO'],
+  ['haruka', 'zuiryuji', 'WANT_TO_GO'],
+  ['haruka', 'hasedera', 'WANT_TO_GO'],
+  ['kenta', 'kiyomizu', 'VISITED'],
   ['haruka', 'miyajima', 'VISITED'],
   ['kenta', 'taipei', 'WANT_TO_GO'],
   ['misaki', 'kyoto', 'VISITED'],
@@ -312,5 +425,5 @@ if (ownerPassword) {
 }
 
 console.log(
-  `完了: ユーザー ${Object.keys(users).length}・投稿 ${spotDefs.length}・写真 ${photoCount}・コメント ${comments.length}・フォロー ${follows.length}`,
+  `完了: ユーザー ${Object.keys(users).length}・投稿 ${spotDefs.length}・写真 ${photoCount}・コメント ${comments.length}・フォロー ${follows.length}・掲示板 ${topics.length}トピック/${replyCount}返信`,
 )
