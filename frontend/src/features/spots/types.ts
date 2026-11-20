@@ -6,11 +6,16 @@ export type Visibility = 'PUBLIC' | 'PRIVATE'
 /** 自分用リストのステータス（docs/features/08_spot_status.md）。 */
 export type SpotStatus = 'VISITED' | 'WANT_TO_GO'
 
+/** コミュニティ称号（docs/features/11_community_reactions.md）。 */
+export type CommunityBadge = 'BEGINNER' | 'PILGRIM' | 'MASTER'
+
 export type Author = {
   id: number
   username: string
   displayName: string
   avatarUrl: string | null
+  /** 投稿・コメント・掲示板の書き込みの合計に応じた称号（0件は null） */
+  badge: CommunityBadge | null
 }
 
 export type SpotPhoto = {
@@ -37,6 +42,9 @@ export type Spot = {
   author: Author
   likeCount: number
   likedByMe: boolean
+  /** 参考になったの件数 */
+  helpfulCount: number
+  helpfulByMe: boolean
   commentCount: number
   /** 閲覧者が付けたステータス（未設定・未ログインは null。本人にだけ返る） */
   myStatus: SpotStatus | null
@@ -59,6 +67,9 @@ export type SpotSummary = {
   author: Author
   likeCount: number
   likedByMe: boolean
+  /** 参考になったの件数 */
+  helpfulCount: number
+  helpfulByMe: boolean
   commentCount: number
   /** 閲覧者が付けたステータス（未設定・未ログインは null。本人にだけ返る） */
   myStatus: SpotStatus | null

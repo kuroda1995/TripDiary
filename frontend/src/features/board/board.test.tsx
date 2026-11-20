@@ -15,6 +15,7 @@ const me = {
   username: meFixture.username,
   displayName: meFixture.displayName,
   avatarUrl: null,
+  badge: null,
 }
 
 function topicFixture(overrides: Record<string, unknown> = {}) {

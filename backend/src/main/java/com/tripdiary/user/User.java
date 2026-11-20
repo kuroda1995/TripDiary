@@ -41,6 +41,14 @@ public class User {
     @Column(name = "avatar_s3_key")
     private String avatarS3Key;
 
+    /**
+     * コミュニティ活動数（投稿・コメント・掲示板の書き込みの合計。称号の判定に使う）。
+     *
+     * <p>DB のトリガーで保つ（V8）ため、アプリからは書き込まない。同じトランザクション内で書き込んだ直後は古い値のことがある。
+     */
+    @Column(name = "activity_count", nullable = false, insertable = false, updatable = false)
+    private int activityCount;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;

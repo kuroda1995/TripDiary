@@ -32,6 +32,8 @@ public record SpotResponse(
         UserResponse author,
         @Schema(description = "行ってみたい！の件数", example = "12") long likeCount,
         @Schema(description = "閲覧者が行ってみたい！を付けているか（未ログインは false）") boolean likedByMe,
+        @Schema(description = "参考になったの件数", example = "5") long helpfulCount,
+        @Schema(description = "閲覧者が参考になったを付けているか（未ログインは false）") boolean helpfulByMe,
         @Schema(description = "コメントの件数", example = "3") long commentCount,
         @Schema(description = "閲覧者が付けたステータス（未設定・未ログインは null。本人だけに返る）", nullable = true)
                 SpotStatus myStatus,
@@ -60,6 +62,8 @@ public record SpotResponse(
                 UserResponse.from(spot.getUser(), photoUrl),
                 reactions.likeCount(),
                 reactions.likedByMe(),
+                reactions.helpfulCount(),
+                reactions.helpfulByMe(),
                 reactions.commentCount(),
                 reactions.myStatus(),
                 spot.getCreatedAt(),

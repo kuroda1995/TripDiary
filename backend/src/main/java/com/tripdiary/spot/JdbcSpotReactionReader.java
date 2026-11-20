@@ -9,7 +9,9 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Component;
 
 /**
- * 行ってみたい！の件数・閲覧者が付けたか・コメント件数・閲覧者のステータスを、スポットの数に関係なく1回の SQL で取得する。
+ * 行ってみたい！・参考になったの件数と閲覧者が付けたか・コメント件数・閲覧者のステータスを、スポットの数に関係なく1回の SQL で取得する。
+ *
+ * <p>参考になったの件数は {@code idx_spot_helpfuls_spot_id} で数える（並び替えに使わないため列には持たない）。
  *
  * <p>テーブル（{@code spot_likes} / {@code comments} / {@code
  * user_spot_statuses}）を直接読むため、like・comment・status パッケージには依存しない。 行ってみたい！の件数は {@code
@@ -29,6 +31,9 @@ public class JdbcSpotReactionReader implements SpotReactionReader {
                    s.like_count,
                    EXISTS (SELECT 1 FROM spot_likes l
                            WHERE l.spot_id = s.id AND l.user_id = :viewerId) AS liked,
+                   (SELECT count(*) FROM spot_helpfuls h WHERE h.spot_id = s.id) AS helpful_count,
+                   EXISTS (SELECT 1 FROM spot_helpfuls h
+                           WHERE h.spot_id = s.id AND h.user_id = :viewerId) AS helpful,
                    (SELECT count(*) FROM comments c WHERE c.spot_id = s.id) AS comment_count,
                    (SELECT st.status FROM user_spot_statuses st
                     WHERE st.spot_id = s.id AND st.user_id = :viewerId) AS my_status
@@ -56,6 +61,8 @@ public class JdbcSpotReactionReader implements SpotReactionReader {
                             new SpotReactions(
                                     rs.getLong("like_count"),
                                     rs.getBoolean("liked"),
+                                    rs.getLong("helpful_count"),
+                                    rs.getBoolean("helpful"),
                                     rs.getLong("comment_count"),
                                     myStatus == null ? null : SpotStatus.valueOf(myStatus)));
                 });
