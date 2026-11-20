@@ -22,12 +22,23 @@ type ReplyItemProps = {
   isMine: boolean
   /** 自分のトピックへの返信か（削除できる） */
   isOnMyTopic: boolean
+  /** 自分がオーナーのコミュニティのトピックへの返信か（削除できる） */
+  isInMyCommunity?: boolean
+  /** トピックが属するコミュニティの ID（広場は null。削除後に一覧を取り直すため） */
+  communityId?: number | null
 }
 
 /** 返信1件。本文はプレーンテキストとして表示する（React が文字列としてエスケープする）。 */
-export function ReplyItem({ reply, isMine, isOnMyTopic }: ReplyItemProps) {
+export function ReplyItem({
+  reply,
+  isMine,
+  isOnMyTopic,
+  isInMyCommunity = false,
+  communityId = null,
+}: ReplyItemProps) {
   const [confirming, setConfirming] = useState(false)
-  const deleteReply = useDeleteReply(reply.topicId)
+  const deleteReply = useDeleteReply(reply.topicId, communityId)
+  const role = isOnMyTopic ? 'トピックの作成者' : 'コミュニティのオーナー'
 
   const handleDelete = () =>
     deleteReply.mutate(reply.id, {
@@ -47,7 +58,7 @@ export function ReplyItem({ reply, isMine, isOnMyTopic }: ReplyItemProps) {
         </time>
       </header>
       <p className="text-sm leading-relaxed whitespace-pre-wrap">{reply.body}</p>
-      {(isMine || isOnMyTopic) && (
+      {(isMine || isOnMyTopic || isInMyCommunity) && (
         <AlertDialog open={confirming} onOpenChange={setConfirming}>
           <AlertDialogTrigger render={<Button variant="ghost" size="xs" className="text-destructive" />}>
             削除
@@ -58,7 +69,7 @@ export function ReplyItem({ reply, isMine, isOnMyTopic }: ReplyItemProps) {
               <AlertDialogDescription>
                 {isMine
                   ? 'この返信を削除します。元に戻せません。'
-                  : `${reply.author.displayName}さんの返信を、トピックの作成者として削除します。元に戻せません。`}
+                  : `${reply.author.displayName}さんの返信を、${role}として削除します。元に戻せません。`}
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>

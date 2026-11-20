@@ -78,7 +78,47 @@ public class BoardController {
                 .body(created);
     }
 
-    @Operation(summary = "トピック削除", description = "トピックの投稿者本人のみ。返信もまとめて削除される。")
+    @Operation(
+            summary = "コミュニティ内のトピック一覧",
+            description = "最後に書き込みがあった順（カーソルページング）。メンバー以外・未ログインでも閲覧できる。")
+    @ApiResponse(
+            responseCode = "404",
+            description = "COMMUNITY_NOT_FOUND",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    @GetMapping("/api/v1/communities/{communityId}/topics")
+    public BoardTopicPageResponse listCommunityTopics(
+            @PathVariable long communityId,
+            @Parameter(description = "前のページの nextCursor") @RequestParam(required = false)
+                    String cursor,
+            @RequestParam(defaultValue = "20") @Min(1) @Max(50) int limit) {
+        return boardService.listCommunityTopics(communityId, cursor, limit);
+    }
+
+    @Operation(summary = "コミュニティ内にトピックを作成", description = "コミュニティのメンバーのみ。")
+    @SecurityRequirement(name = OpenApiConfig.BEARER_AUTH)
+    @ApiResponse(responseCode = "201", description = "作成成功（Location ヘッダに URL）")
+    @ApiResponse(
+            responseCode = "403",
+            description = "COMMUNITY_MEMBERSHIP_REQUIRED（メンバーではない）",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    @ApiResponse(
+            responseCode = "404",
+            description = "COMMUNITY_NOT_FOUND",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    @PostMapping("/api/v1/communities/{communityId}/topics")
+    public ResponseEntity<BoardTopicResponse> createCommunityTopic(
+            @PathVariable long communityId,
+            @Valid @RequestBody BoardTopicRequest request,
+            @AuthenticationPrincipal AuthenticatedUser me) {
+        BoardTopicResponse created =
+                boardService.createCommunityTopic(communityId, me.id(), request);
+        return ResponseEntity.created(URI.create("/api/v1/board-topics/" + created.id()))
+                .body(created);
+    }
+
+    @Operation(
+            summary = "トピック削除",
+            description = "トピックの投稿者本人、またはコミュニティのオーナー（コミュニティ内のトピック）。返信もまとめて削除される。")
     @SecurityRequirement(name = OpenApiConfig.BEARER_AUTH)
     @ApiResponse(responseCode = "204", description = "削除成功")
     @ApiResponse(
@@ -110,12 +150,16 @@ public class BoardController {
         return boardService.listReplies(id, cursor, limit);
     }
 
-    @Operation(summary = "返信する", description = "トピックが一覧の先頭に上がる。")
+    @Operation(summary = "返信する", description = "トピックが一覧の先頭に上がる。コミュニティ内のトピックにはメンバーだけが返信できる。")
     @SecurityRequirement(name = OpenApiConfig.BEARER_AUTH)
     @ApiResponse(responseCode = "201", description = "投稿成功")
     @ApiResponse(
             responseCode = "400",
             description = "VALIDATION_ERROR",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    @ApiResponse(
+            responseCode = "403",
+            description = "COMMUNITY_MEMBERSHIP_REQUIRED（コミュニティのメンバーではない）",
             content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     @ApiResponse(
             responseCode = "404",
@@ -131,7 +175,7 @@ public class BoardController {
                 .body(created);
     }
 
-    @Operation(summary = "返信の削除", description = "返信の投稿者本人、またはトピックの投稿者。")
+    @Operation(summary = "返信の削除", description = "返信の投稿者本人、トピックの投稿者、またはコミュニティのオーナー。")
     @SecurityRequirement(name = OpenApiConfig.BEARER_AUTH)
     @ApiResponse(responseCode = "204", description = "削除成功")
     @ApiResponse(

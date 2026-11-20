@@ -1,6 +1,7 @@
 package com.tripdiary.board.dto;
 
 import com.tripdiary.board.BoardTopic;
+import com.tripdiary.community.Community;
 import com.tripdiary.user.dto.UserResponse;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.Instant;
@@ -15,7 +16,24 @@ public record BoardTopicResponse(
         UserResponse author,
         @Schema(description = "返信の件数", example = "3") long replyCount,
         @Schema(description = "最後に書き込みがあった日時（作成または最新の返信）") Instant lastActivityAt,
-        Instant createdAt) {
+        Instant createdAt,
+        @Schema(description = "コミュニティ内のトピックならそのコミュニティ（広場のトピックは null）", nullable = true)
+                CommunityRef community) {
+
+    /** トピックが属するコミュニティ（画面の「← コミュニティへ戻る」と、返信・削除できるかの表示に使う）。 */
+    @Schema(description = "トピックが属するコミュニティ")
+    public record CommunityRef(
+            @Schema(example = "3") long id,
+            @Schema(example = "北陸・富山のお寺巡り同好会") String name,
+            @Schema(description = "オーナーのユーザー ID", example = "2") long ownerId) {
+
+        static CommunityRef of(Community community) {
+            return community == null
+                    ? null
+                    : new CommunityRef(
+                            community.getId(), community.getName(), community.getOwner().getId());
+        }
+    }
 
     /**
      * @param photoUrl S3 キーから配信 URL を作る関数（投稿者のアイコン用）
@@ -29,6 +47,7 @@ public record BoardTopicResponse(
                 UserResponse.from(topic.getUser(), photoUrl),
                 replyCount,
                 topic.getLastActivityAt(),
-                topic.getCreatedAt());
+                topic.getCreatedAt(),
+                CommunityRef.of(topic.getCommunity()));
     }
 }

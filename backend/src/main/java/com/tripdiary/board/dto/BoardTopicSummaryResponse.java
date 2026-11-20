@@ -31,7 +31,8 @@ public record BoardTopicSummaryResponse(
                 topic.getCreatedAt());
     }
 
-    static String excerpt(String text) {
+    /** 一覧に出す本文の先頭（コミュニティの説明文にも使う）。 */
+    public static String excerpt(String text) {
         String normalized = text.strip();
         if (normalized.codePointCount(0, normalized.length()) <= EXCERPT_LENGTH) {
             return normalized;

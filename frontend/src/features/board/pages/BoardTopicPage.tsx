@@ -15,6 +15,7 @@ import {
 import { Button, buttonVariants } from '@/components/ui/button'
 import { useAuth } from '@/features/auth/useAuth'
 import { CommentForm } from '@/features/comments/components/CommentForm'
+import { communityKeys, fetchCommunity } from '@/features/communities/api'
 import { useSpotIdParam } from '@/features/spots/useSpotIdParam'
 import { ApiError } from '@/lib/apiClient'
 import { formatDateTime } from '@/lib/date'
@@ -70,17 +71,20 @@ function TopicDetail({ topicId }: { topicId: number }) {
 
   const me = auth.status === 'authenticated' ? auth.user : null
   const isOwner = me !== null && me.id === topic.author.id
+  // コミュニティ内のトピックは、コミュニティのオーナーも削除できる
+  const isCommunityOwner = me !== null && me.id === topic.community?.ownerId
+  const backPath = topic.community ? `/communities/${topic.community.id}` : '/community'
 
   return (
     <article className="space-y-6">
-      <Link to="/community" className="text-sm text-muted-foreground hover:underline">
-        ← コミュニティ広場
+      <Link to={backPath} className="text-sm text-muted-foreground hover:underline">
+        ← {topic.community ? topic.community.name : 'コミュニティ広場'}
       </Link>
       <header className="space-y-3">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <h1 className="text-2xl font-bold">{topic.title}</h1>
-          {isOwner && (
-            <DeleteTopicButton topic={topic} onDeleted={() => navigate('/community', { replace: true })} />
+          {(isOwner || isCommunityOwner) && (
+            <DeleteTopicButton topic={topic} onDeleted={() => navigate(backPath, { replace: true })} />
           )}
         </div>
         <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
@@ -96,7 +100,7 @@ function TopicDetail({ topicId }: { topicId: number }) {
 
 function DeleteTopicButton({ topic, onDeleted }: { topic: BoardTopic; onDeleted: () => void }) {
   const [open, setOpen] = useState(false)
-  const deleteTopic = useDeleteTopic(topic.id)
+  const deleteTopic = useDeleteTopic(topic.id, topic.community?.id ?? null)
 
   return (
     <AlertDialog open={open} onOpenChange={setOpen}>
@@ -139,7 +143,15 @@ function DeleteTopicButton({ topic, onDeleted }: { topic: BoardTopic; onDeleted:
 function Replies({ topic, myId }: { topic: BoardTopic; myId: number | null }) {
   const auth = useAuth()
   const location = useLocation()
-  const postReply = usePostReply(topic.id)
+  const communityId = topic.community?.id ?? null
+  const postReply = usePostReply(topic.id, communityId)
+  // コミュニティ内のトピックはメンバーだけが返信できるので、参加状態を読む
+  const community = useQuery({
+    queryKey: communityKeys.detail(communityId ?? 0),
+    queryFn: () => fetchCommunity(communityId!),
+    enabled: communityId !== null && myId !== null,
+  })
+  const canReply = myId !== null && (communityId === null || community.data?.joined === true)
   const query = useInfiniteQuery({
     queryKey: boardKeys.replies(topic.id),
     queryFn: ({ pageParam }) => fetchReplies(topic.id, pageParam),
@@ -170,6 +182,8 @@ function Replies({ topic, myId }: { topic: BoardTopic; myId: number | null }) {
                 reply={reply}
                 isMine={myId !== null && myId === reply.author.id}
                 isOnMyTopic={myId !== null && myId === topic.author.id}
+                isInMyCommunity={myId !== null && myId === topic.community?.ownerId}
+                communityId={communityId}
               />
             </li>
           ))}
@@ -186,12 +200,25 @@ function Replies({ topic, myId }: { topic: BoardTopic; myId: number | null }) {
         </Button>
       )}
 
-      {myId !== null ? (
+      {canReply ? (
         <CommentForm
           label="返信を書く"
           submitLabel="返信する"
           onSubmit={(body) => postReply.mutateAsync(body)}
         />
+      ) : myId !== null ? (
+        topic.community &&
+        community.isSuccess && (
+          <p className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
+            返信できるのはコミュニティのメンバーだけです。
+            <Link
+              to={`/communities/${topic.community.id}`}
+              className="ml-1 font-medium text-foreground underline"
+            >
+              「{topic.community.name}」に参加する
+            </Link>
+          </p>
+        )
       ) : (
         auth.status === 'anonymous' && (
           <Link
