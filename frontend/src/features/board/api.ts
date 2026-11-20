@@ -17,6 +17,9 @@ export type BoardTopicSummary = {
   createdAt: string
 }
 
+/** トピックが属するコミュニティ（docs/features/12_communities.md）。 */
+export type TopicCommunity = { id: number; name: string; ownerId: number }
+
 export type BoardTopic = {
   id: number
   title: string
@@ -26,6 +29,8 @@ export type BoardTopic = {
   replyCount: number
   lastActivityAt: string
   createdAt: string
+  /** コミュニティ内のトピックならそのコミュニティ（広場のトピックは null） */
+  community: TopicCommunity | null
 }
 
 export type BoardReply = {
@@ -79,14 +84,32 @@ export function useCreateTopic() {
   })
 }
 
-export function useDeleteTopic(topicId: number) {
+/**
+ * トピック一覧（広場とコミュニティの両方）を次に表示するときに取り直す。
+ * コミュニティの一覧のキーは features/communities/api.ts の communityKeys.topics と同じ形（循環参照を避けて直接書く）。
+ */
+function invalidateTopicLists(queryClient: ReturnType<typeof useQueryClient>, communityId: number | null) {
+  void queryClient.invalidateQueries({ queryKey: boardKeys.topics(), refetchType: 'none' })
+  if (communityId !== null) {
+    void queryClient.invalidateQueries({
+      queryKey: ['communities', 'topics', communityId],
+      refetchType: 'none',
+    })
+    void queryClient.invalidateQueries({
+      queryKey: ['communities', 'detail', communityId],
+      refetchType: 'none',
+    })
+  }
+}
+
+export function useDeleteTopic(topicId: number, communityId: number | null = null) {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: () => apiFetch<void>(`/api/v1/board-topics/${topicId}`, { method: 'DELETE' }),
     onSuccess: () => {
       queryClient.removeQueries({ queryKey: boardKeys.topic(topicId) })
       queryClient.removeQueries({ queryKey: boardKeys.replies(topicId) })
-      return queryClient.invalidateQueries({ queryKey: boardKeys.topics(), refetchType: 'none' })
+      invalidateTopicLists(queryClient, communityId)
     },
   })
 }
@@ -94,6 +117,7 @@ export function useDeleteTopic(topicId: number) {
 /** 返信の投稿・削除の後は、返信一覧・トピック（返信数）・トピック一覧（並び順）を取り直す。 */
 function useReplyMutation<TVariables, TResult>(
   topicId: number,
+  communityId: number | null,
   mutationFn: (variables: TVariables) => Promise<TResult>,
 ) {
   const queryClient = useQueryClient()
@@ -102,13 +126,13 @@ function useReplyMutation<TVariables, TResult>(
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: boardKeys.replies(topicId) })
       await queryClient.invalidateQueries({ queryKey: boardKeys.topic(topicId) })
-      void queryClient.invalidateQueries({ queryKey: boardKeys.topics(), refetchType: 'none' })
+      invalidateTopicLists(queryClient, communityId)
     },
   })
 }
 
-export function usePostReply(topicId: number) {
-  return useReplyMutation(topicId, (body: string) =>
+export function usePostReply(topicId: number, communityId: number | null = null) {
+  return useReplyMutation(topicId, communityId, (body: string) =>
     apiFetch<BoardReply>(`/api/v1/board-topics/${topicId}/replies`, {
       method: 'POST',
       body: JSON.stringify({ body }),
@@ -116,8 +140,8 @@ export function usePostReply(topicId: number) {
   )
 }
 
-export function useDeleteReply(topicId: number) {
-  return useReplyMutation(topicId, (replyId: number) =>
+export function useDeleteReply(topicId: number, communityId: number | null = null) {
+  return useReplyMutation(topicId, communityId, (replyId: number) =>
     apiFetch<void>(`/api/v1/board-replies/${replyId}`, { method: 'DELETE' }),
   )
 }

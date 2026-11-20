@@ -10,6 +10,8 @@ import com.tripdiary.board.dto.BoardTopicResponse;
 import com.tripdiary.board.dto.BoardTopicSummaryResponse;
 import com.tripdiary.common.exception.ForbiddenException;
 import com.tripdiary.common.exception.NotFoundException;
+import com.tripdiary.community.Community;
+import com.tripdiary.community.CommunityService;
 import com.tripdiary.photo.PhotoStorage;
 import com.tripdiary.spot.SpotCursor;
 import com.tripdiary.user.User;
@@ -24,7 +26,10 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-/** お寺コミュニティ広場（掲示板。docs/features/10_community_board.md）。 */
+/**
+ * お寺コミュニティ広場（掲示板。docs/features/10_community_board.md）と、コミュニティ内のトピック（内輪トーク。
+ * docs/features/12_communities.md）。
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -36,6 +41,7 @@ public class BoardService {
     private final BoardTopicRepository topicRepository;
     private final BoardReplyRepository replyRepository;
     private final UserRepository userRepository;
+    private final CommunityService communityService;
     private final PhotoStorage photoStorage;
     private final Clock clock;
 
@@ -54,6 +60,27 @@ public class BoardService {
             SpotCursor after = SpotCursor.decode(cursor);
             topics = topicRepository.findAfter(after.createdAt(), after.id(), page);
         }
+        return toPage(topics, limit);
+    }
+
+    /** コミュニティ内のトピック一覧（最後に書き込みがあった順。閲覧はメンバー以外もできる）。 */
+    @Transactional(readOnly = true)
+    public BoardTopicPageResponse listCommunityTopics(long communityId, String cursor, int limit) {
+        communityService.findCommunity(communityId);
+        PageRequest page = PageRequest.of(0, limit + 1);
+        List<BoardTopic> topics;
+        if (cursor == null) {
+            topics = topicRepository.findCommunityFirstPage(communityId, page);
+        } else {
+            SpotCursor after = SpotCursor.decode(cursor);
+            topics =
+                    topicRepository.findCommunityAfter(
+                            communityId, after.createdAt(), after.id(), page);
+        }
+        return toPage(topics, limit);
+    }
+
+    private BoardTopicPageResponse toPage(List<BoardTopic> topics, int limit) {
         boolean hasNext = topics.size() > limit;
         List<BoardTopic> items = hasNext ? topics.subList(0, limit) : topics;
         String nextCursor = null;
@@ -95,11 +122,30 @@ public class BoardService {
         return BoardTopicResponse.from(topic, 0, photoStorage::publicUrl);
     }
 
-    /** 削除はトピックの投稿者本人のみ（他人は 403）。返信もまとめて削除される（ON DELETE CASCADE）。 */
+    /** コミュニティ内にトピックを作る（メンバーのみ。それ以外は 403 COMMUNITY_MEMBERSHIP_REQUIRED）。 */
+    @Transactional
+    public BoardTopicResponse createCommunityTopic(
+            long communityId, long userId, BoardTopicRequest request) {
+        Community community = communityService.findCommunity(communityId);
+        communityService.requireMember(communityId, userId);
+        User author = userRepository.getReferenceById(userId);
+        BoardTopic topic =
+                topicRepository.save(
+                        new BoardTopic(
+                                community,
+                                author,
+                                request.title().strip(),
+                                request.body().strip(),
+                                clock.instant()));
+        log.info("Community topic created topicId={} communityId={}", topic.getId(), communityId);
+        return BoardTopicResponse.from(topic, 0, photoStorage::publicUrl);
+    }
+
+    /** 削除はトピックの投稿者本人、またはコミュニティのオーナー（それ以外は 403）。返信もまとめて削除される（ON DELETE CASCADE）。 */
     @Transactional
     public void deleteTopic(long topicId, long userId) {
         BoardTopic topic = findTopic(topicId);
-        if (!topic.isWrittenBy(userId)) {
+        if (!topic.isWrittenBy(userId) && !topic.isModeratedBy(userId)) {
             throw new ForbiddenException("他のユーザーのトピックは削除できません");
         }
         topicRepository.delete(topic);
@@ -132,10 +178,17 @@ public class BoardService {
                 nextCursor);
     }
 
-    /** 返信する。トピックの最終書き込み日時を進め、一覧の上に上げる。 */
+    /**
+     * 返信する。トピックの最終書き込み日時を進め、一覧の上に上げる。
+     *
+     * <p>コミュニティ内のトピックにはメンバーだけが返信できる（それ以外は 403 COMMUNITY_MEMBERSHIP_REQUIRED）。
+     */
     @Transactional
     public BoardReplyResponse createReply(long topicId, long userId, BoardReplyRequest request) {
         BoardTopic topic = findTopic(topicId);
+        if (topic.getCommunity() != null) {
+            communityService.requireMember(topic.getCommunity().getId(), userId);
+        }
         User author = userRepository.getReferenceById(userId);
         BoardReply reply =
                 replyRepository.save(
@@ -145,7 +198,7 @@ public class BoardService {
         return BoardReplyResponse.from(reply, photoStorage::publicUrl);
     }
 
-    /** 削除は返信の投稿者本人、またはトピックの投稿者（それ以外は 403）。 */
+    /** 削除は返信の投稿者本人、トピックの投稿者、またはコミュニティのオーナー（それ以外は 403）。 */
     @Transactional
     public void deleteReply(long replyId, long userId) {
         BoardReply reply =
@@ -155,7 +208,10 @@ public class BoardService {
                                 () ->
                                         new NotFoundException(
                                                 BOARD_REPLY_NOT_FOUND, "指定された返信は存在しません"));
-        if (!reply.isWrittenBy(userId) && !reply.getTopic().isWrittenBy(userId)) {
+        BoardTopic topic = reply.getTopic();
+        if (!reply.isWrittenBy(userId)
+                && !topic.isWrittenBy(userId)
+                && !topic.isModeratedBy(userId)) {
             throw new ForbiddenException("この返信は削除できません");
         }
         replyRepository.delete(reply);

@@ -37,6 +37,10 @@ erDiagram
     board_topics ||--o{ board_replies : "受ける"
     users ||--o{ spot_helpfuls : "参考になったを付ける"
     spots ||--o{ spot_helpfuls : "受ける"
+    users ||--o{ communities : "作る (owner_id)"
+    users ||--o{ community_members : "参加する"
+    communities ||--|{ community_members : "メンバーを持つ (オーナーを含む)"
+    communities |o--o{ board_topics : "内輪トーク (community_id)"
 
     users {
         BIGINT id PK
@@ -141,6 +145,7 @@ erDiagram
         TEXT body "1〜2000文字"
         TIMESTAMPTZ last_activity_at "返信のたびに進める"
         TIMESTAMPTZ created_at
+        BIGINT community_id FK "NULL = 広場のトピック"
     }
 
     board_replies {
@@ -155,6 +160,22 @@ erDiagram
         BIGINT user_id PK,FK
         BIGINT spot_id PK,FK
         TIMESTAMPTZ created_at
+    }
+
+    communities {
+        BIGINT id PK
+        BIGINT owner_id FK
+        VARCHAR_50 name UK "lower(name) で一意"
+        TEXT description "1〜1000文字"
+        VARCHAR_30_ARRAY categories "カテゴリタグ（1つ以上）"
+        INTEGER member_count "メンバー数（トリガーで保つ）"
+        TIMESTAMPTZ created_at
+    }
+
+    community_members {
+        BIGINT community_id PK,FK
+        BIGINT user_id PK,FK
+        TIMESTAMPTZ joined_at
     }
 ```
 
@@ -212,3 +233,6 @@ erDiagram
 | ユーザー → コメント ← スポット | 1 : N / 1 : N | `comments.user_id`, `comments.spot_id` |
 | ユーザー ⇔ ユーザー（フォロー） | N : M（自己参照） | `follows` |
 | ユーザー → トピック → 返信 | 1 : N / 1 : N | `board_topics.user_id`, `board_replies.topic_id` |
+| ユーザー → コミュニティ（オーナー） | 1 : N | `communities.owner_id` |
+| ユーザー ⇔ コミュニティ（参加） | N : M | `community_members` |
+| コミュニティ → トピック | 1 : N（広場のトピックは `community_id` が NULL） | `board_topics.community_id` |

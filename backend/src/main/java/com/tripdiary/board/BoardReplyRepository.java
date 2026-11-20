@@ -28,9 +28,10 @@ public interface BoardReplyRepository extends JpaRepository<BoardReply, Long> {
             @Param("id") long id,
             Pageable pageable);
 
-    /** 権限の確認に使うため、トピックとその投稿者・返信の投稿者もまとめて取得する。 */
+    /** 権限の確認に使うため、トピックとその投稿者・返信の投稿者・コミュニティのオーナーもまとめて取得する。 */
     @Query(
             "select r from BoardReply r join fetch r.user join fetch r.topic t join fetch t.user"
+                    + " left join fetch t.community c left join fetch c.owner"
                     + " where r.id = :id")
     Optional<BoardReply> findWithTopicById(@Param("id") long id);
 

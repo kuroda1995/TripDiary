@@ -1,4 +1,4 @@
-import { MessagesSquare, Search } from 'lucide-react'
+import { MessagesSquare, Search, Users } from 'lucide-react'
 import { Link, Outlet } from 'react-router'
 import { buttonVariants } from '@/components/ui/button'
 import { Toaster } from 'sonner'
@@ -25,6 +25,11 @@ export function RootLayout() {
                   <MessagesSquare aria-hidden />
                   {/* 狭い画面ではアイコンだけにする（読み上げ名は常に「コミュニティ広場」） */}
                   <span className="sr-only sm:not-sr-only">コミュニティ広場</span>
+                </Link>
+                <Link to="/communities" className={buttonVariants({ variant: 'ghost', size: 'sm' })}>
+                  <Users aria-hidden />
+                  {/* 狭い画面ではアイコンだけにする（読み上げ名は常に「コミュニティ」） */}
+                  <span className="sr-only sm:not-sr-only">コミュニティ</span>
                 </Link>
               </nav>
             </div>

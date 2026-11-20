@@ -24,7 +24,7 @@ class ApplicationIntegrationTest {
     @Autowired JdbcTemplate jdbcTemplate;
 
     @Test
-    @DisplayName("Flyway により設計書どおりの13テーブルが作成される")
+    @DisplayName("Flyway により設計書どおりの15テーブルが作成される")
     void flywayCreatesAllTables() {
         var tables =
                 jdbcTemplate.queryForList(
@@ -46,7 +46,9 @@ class ApplicationIntegrationTest {
                         "user_spot_statuses",
                         "board_topics",
                         "board_replies",
-                        "spot_helpfuls");
+                        "spot_helpfuls",
+                        "communities",
+                        "community_members");
     }
 
     @Test

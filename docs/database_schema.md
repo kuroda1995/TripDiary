@@ -124,6 +124,8 @@ erDiagram
 | 11 | `board_topics` | コミュニティ広場のトピック | 掲示板（V7） |
 | 12 | `board_replies` | コミュニティ広場の返信 | 掲示板（V7） |
 | 13 | `spot_helpfuls` | 参考になった | 参考になった（V8） |
+| 14 | `communities` | コミュニティ | テーマ別コミュニティ（V9） |
+| 15 | `community_members` | コミュニティ×メンバー | テーマ別コミュニティ（V9） |
 
 ---
 
@@ -337,10 +339,14 @@ V7 で追加（[10_community_board.md](features/10_community_board.md)）。
 | `body` | `TEXT` | NN, CHECK（1〜2000文字） | | 本文 |
 | `last_activity_at` | `TIMESTAMPTZ` | NN | `now()` | 最後に書き込みがあった日時（作成時は `created_at`、返信のたびに進める） |
 | `created_at` | `TIMESTAMPTZ` | NN | `now()` | 作成日時 |
+| `community_id` | `BIGINT` | FK → `communities.id` ON DELETE CASCADE | `NULL` | コミュニティ内のトピック（内輪トーク）ならそのコミュニティ。`NULL` は広場のトピック（V9 で追加） |
 
 インデックス:
-- `idx_board_topics_last_activity` : `(last_activity_at DESC, id DESC)` — 一覧（最後の書き込み順）・カーソルページング
+- `idx_board_topics_last_activity` : `(last_activity_at DESC, id DESC) WHERE community_id IS NULL` — 広場の一覧（最後の書き込み順）・カーソルページング（V9 で部分インデックスに変更）
+- `idx_board_topics_community_last_activity` : `(community_id, last_activity_at DESC, id DESC) WHERE community_id IS NOT NULL` — コミュニティ内の一覧（V9）
 - `idx_board_topics_user_id` : `(user_id)` — 連鎖削除
+
+> コミュニティ内のトピックと返信は、広場と同じ `board_topics` / `board_replies` に入れる（返信・削除・一覧の仕組みをそのまま使う）。返信はコミュニティのメンバーだけができる（アプリで確認する）。
 
 ### 3.12 `board_replies`（コミュニティ広場の返信）
 
@@ -374,6 +380,47 @@ V8 で追加。`spot_likes` と同じ形。
 - 主キー: `(user_id, spot_id)` — 1ユーザー1スポットにつき1回（`INSERT ... ON CONFLICT DO NOTHING` で冪等）
 - `idx_spot_helpfuls_spot_id` : `(spot_id)` — 件数の集計（一覧・詳細の取得 SQL でまとめて数える）
 
+### 3.14 `communities`（コミュニティ）
+
+V9 で追加（[12_communities.md](features/12_communities.md)）。
+
+| カラム名 | 型 | 制約 | デフォルト | 説明 |
+| --- | --- | --- | --- | --- |
+| `id` | `BIGINT` | PK, IDENTITY | | コミュニティID |
+| `owner_id` | `BIGINT` | NN, FK → `users.id` ON DELETE CASCADE | | 作成者（オーナー） |
+| `name` | `VARCHAR(50)` | NN, CHECK（`char_length(trim(name)) >= 1`） | | コミュニティ名（`lower(name)` で一意） |
+| `description` | `TEXT` | NN, CHECK（1〜1000文字） | | 説明文（テーマ・目的） |
+| `categories` | `VARCHAR(30)[]` | NN, CHECK（1つ以上、`REGIONAL` / `GOSHUIN` / `ARCHITECTURE_GARDEN` / `BEGINNER_FRIENDLY` / `PHOTOGRAPHY` のみ） | `'{}'` | カテゴリタグ |
+| `member_count` | `INTEGER` | NN, CHECK（0以上） | `0` | 参加メンバー数（オーナーを含む。トリガーで保つ） |
+| `created_at` | `TIMESTAMPTZ` | NN | `now()` | 作成日時 |
+
+インデックス:
+- `uq_communities_name_lower` : `UNIQUE (lower(name))` — 同じ名前は作れない（英字の大文字・小文字は区別しない）
+- `idx_communities_created_at` : `(created_at DESC, id DESC)` — 新着順の一覧・カーソルページング
+- `idx_communities_member_count` : `(member_count DESC, created_at DESC, id DESC)` — 人気順（メンバー数順）の一覧
+- `idx_communities_categories` : `GIN (categories)` — カテゴリでの絞り込み（`categories @> ARRAY[...]`）
+- `idx_communities_name_trgm` / `idx_communities_description_trgm` : `GIN (... gin_trgm_ops)` — キーワード検索（`ILIKE`）
+- `idx_communities_owner_id` : `(owner_id)` — 連鎖削除
+
+> **`member_count` はトリガー（`community_members` の INSERT / DELETE の後に ±1）で保つ。** 人気順に並べるため列で持つ（`spots.like_count` と同じ考え方）。アプリからは書き込まない。カテゴリは決まった種類から選ぶだけなので、`spots.temple_features` と同じく配列の列で持つ。
+
+### 3.15 `community_members`（コミュニティ × メンバー 中間テーブル）
+
+V9 で追加。
+
+| カラム名 | 型 | 制約 | デフォルト | 説明 |
+| --- | --- | --- | --- | --- |
+| `community_id` | `BIGINT` | PK, FK → `communities.id` ON DELETE CASCADE | | コミュニティ |
+| `user_id` | `BIGINT` | PK, FK → `users.id` ON DELETE CASCADE | | メンバー |
+| `joined_at` | `TIMESTAMPTZ` | NN | `now()` | 参加日時 |
+
+インデックス:
+- 主キー: `(community_id, user_id)` — 1人1コミュニティにつき1回（`INSERT ... ON CONFLICT DO NOTHING` で冪等）
+- `idx_community_members_community_joined` : `(community_id, joined_at, user_id)` — メンバー一覧（参加した順）・カーソルページング
+- `idx_community_members_user_id` : `(user_id)` — 一覧の「参加中」の判定・連鎖削除
+
+> オーナーも作成時にメンバーとして登録する（メンバー数・メンバー一覧・書き込みの権限をオーナーかどうかで分けずに済む）。オーナーかどうかは `communities.owner_id` で判定する。
+
 ---
 
 ## 4. リレーション一覧
@@ -399,8 +446,13 @@ V8 で追加。`spot_likes` と同じ形。
 | `board_topics` | `board_replies` | `topic_id` | 1 : N | CASCADE |
 | `users` | `spot_helpfuls` | `user_id` | 1 : N | CASCADE |
 | `spots` | `spot_helpfuls` | `spot_id` | 1 : N | CASCADE |
+| `users` | `communities` | `owner_id` | 1 : N | CASCADE |
+| `communities` | `community_members` | `community_id` | 1 : N | CASCADE |
+| `users` | `community_members` | `user_id` | 1 : N | CASCADE |
+| `communities` | `board_topics` | `community_id` | 1 : N（NULL 可） | CASCADE |
 
 多対多の関係:
+- `users` ⇔ `communities`（参加）: `community_members`
 - `users` ⇔ `spots`（行ってみたい！）: `spot_likes`
 - `users` ⇔ `spots`（ステータス）: `user_spot_statuses`
 - `users` ⇔ `users`（フォロー）: `follows`

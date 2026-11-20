@@ -1,5 +1,6 @@
 package com.tripdiary.board;
 
+import com.tripdiary.community.Community;
 import com.tripdiary.user.User;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -35,6 +36,11 @@ public class BoardTopic {
     @JoinColumn(name = "user_id", nullable = false, updatable = false)
     private User user;
 
+    /** コミュニティ内のトピック（内輪トーク）ならそのコミュニティ。広場のトピックは null。 */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "community_id", updatable = false)
+    private Community community;
+
     @Column(nullable = false)
     private String title;
 
@@ -47,7 +53,16 @@ public class BoardTopic {
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
+    /** 広場のトピック。 */
     public BoardTopic(User user, String title, String body, Instant now) {
+        this(null, user, title, body, now);
+    }
+
+    /**
+     * @param community コミュニティ内のトピックならそのコミュニティ（広場は null）
+     */
+    public BoardTopic(Community community, User user, String title, String body, Instant now) {
+        this.community = community;
         this.user = user;
         this.title = title;
         this.body = body;
@@ -65,6 +80,11 @@ public class BoardTopic {
 
     public boolean isWrittenBy(long userId) {
         return user.getId().equals(userId);
+    }
+
+    /** コミュニティのオーナーか（コミュニティ内のトピック・返信を削除できる）。広場のトピックでは常に false。 */
+    public boolean isModeratedBy(long userId) {
+        return community != null && community.isOwnedBy(userId);
     }
 
     @Override

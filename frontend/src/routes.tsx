@@ -4,6 +4,9 @@ import { RootLayout } from '@/components/layout/RootLayout'
 import { GuestOnly, RequireAuth } from '@/features/auth/components/RequireAuth'
 import { BoardPage } from '@/features/board/pages/BoardPage'
 import { BoardTopicPage } from '@/features/board/pages/BoardTopicPage'
+import { CommunitiesPage } from '@/features/communities/pages/CommunitiesPage'
+import { CommunityDetailPage } from '@/features/communities/pages/CommunityDetailPage'
+import { CommunityNewPage } from '@/features/communities/pages/CommunityNewPage'
 import { LoginPage } from '@/features/auth/pages/LoginPage'
 import { MyPage } from '@/features/auth/pages/MyPage'
 import { SignupPage } from '@/features/auth/pages/SignupPage'
@@ -33,6 +36,8 @@ export const routes: RouteObject[] = [
       { path: 'users/:username/followers', element: <FollowListPage kind="followers" /> },
       { path: 'community', element: <BoardPage /> },
       { path: 'community/topics/:id', element: <BoardTopicPage /> },
+      { path: 'communities', element: <CommunitiesPage /> },
+      { path: 'communities/:id', element: <CommunityDetailPage /> },
       {
         element: <GuestOnly />,
         children: [
@@ -49,6 +54,7 @@ export const routes: RouteObject[] = [
           { path: 'settings/profile', element: <ProfileSettingsPage /> },
           { path: 'settings/password', element: <PasswordSettingsPage /> },
           { path: 'spots/new', element: <SpotNewPage /> },
+          { path: 'communities/new', element: <CommunityNewPage /> },
           { path: 'spots/:id/edit', element: <SpotEditPage /> },
         ],
       },

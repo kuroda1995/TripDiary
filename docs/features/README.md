@@ -15,6 +15,7 @@ TripDiary の各機能の仕様をまとめたドキュメントです。全体�
 | 9 | [お寺の評価・特徴タグ](09_temple_review.md) | TMPL | `spots`（`rating_*` / `temple_features`） |
 | 10 | [お寺コミュニティ広場（掲示板）](10_community_board.md) | BRD | `board_topics`, `board_replies` |
 | 11 | [参考になった・行きたい・コミュニティ称号](11_community_reactions.md) | CMTY | `spot_helpfuls`, `users.activity_count` |
+| 12 | [テーマ別コミュニティ](12_communities.md) | GRP | `communities`, `community_members`, `board_topics.community_id` |
 
 ## 各ドキュメントの構成
 

@@ -27,6 +27,7 @@ function topicFixture(overrides: Record<string, unknown> = {}) {
     replyCount: 0,
     lastActivityAt: '2026-11-19T03:00:00Z',
     createdAt: '2026-11-19T03:00:00Z',
+    community: null,
     ...overrides,
   }
 }
