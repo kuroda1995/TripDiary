@@ -32,6 +32,10 @@ erDiagram
     area_tags ||--o{ spot_area_tags : "付与される"
     area_tags |o--o{ area_tags : "親子階層 (parent_id)"
 
+    users ||--o{ board_topics : "トピックを作る"
+    users ||--o{ board_replies : "返信する"
+    board_topics ||--o{ board_replies : "受ける"
+
     users {
         BIGINT id PK
         VARCHAR_255 email UK "lower(email) で一意"
@@ -126,6 +130,23 @@ erDiagram
         TIMESTAMPTZ created_at
         TIMESTAMPTZ updated_at
     }
+
+    board_topics {
+        BIGINT id PK
+        BIGINT user_id FK
+        VARCHAR_100 title
+        TEXT body "1〜2000文字"
+        TIMESTAMPTZ last_activity_at "返信のたびに進める"
+        TIMESTAMPTZ created_at
+    }
+
+    board_replies {
+        BIGINT id PK
+        BIGINT topic_id FK
+        BIGINT user_id FK
+        TEXT body "1〜1000文字"
+        TIMESTAMPTZ created_at
+    }
 ```
 
 > Mermaid の erDiagram は型名に `(` `)` を使えないため、`VARCHAR(255)` を `VARCHAR_255` と表記している。
@@ -180,3 +201,4 @@ erDiagram
 | ユーザー ⇔ スポット（訪問済み/行きたい） | N : M（1組につき1ステータス） | `user_spot_statuses` |
 | ユーザー → コメント ← スポット | 1 : N / 1 : N | `comments.user_id`, `comments.spot_id` |
 | ユーザー ⇔ ユーザー（フォロー） | N : M（自己参照） | `follows` |
+| ユーザー → トピック → 返信 | 1 : N / 1 : N | `board_topics.user_id`, `board_replies.topic_id` |

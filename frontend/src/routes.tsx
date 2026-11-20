@@ -2,6 +2,8 @@ import type { RouteObject } from 'react-router'
 import { NotFoundPage } from '@/components/layout/NotFoundPage'
 import { RootLayout } from '@/components/layout/RootLayout'
 import { GuestOnly, RequireAuth } from '@/features/auth/components/RequireAuth'
+import { BoardPage } from '@/features/board/pages/BoardPage'
+import { BoardTopicPage } from '@/features/board/pages/BoardTopicPage'
 import { LoginPage } from '@/features/auth/pages/LoginPage'
 import { MyPage } from '@/features/auth/pages/MyPage'
 import { SignupPage } from '@/features/auth/pages/SignupPage'
@@ -29,6 +31,8 @@ export const routes: RouteObject[] = [
       { path: 'users/:username', element: <UserProfilePage /> },
       { path: 'users/:username/following', element: <FollowListPage kind="following" /> },
       { path: 'users/:username/followers', element: <FollowListPage kind="followers" /> },
+      { path: 'community', element: <BoardPage /> },
+      { path: 'community/topics/:id', element: <BoardTopicPage /> },
       {
         element: <GuestOnly />,
         children: [

@@ -166,6 +166,8 @@ export const defaultHandlers = [
   http.get('/api/v1/me/spot-statuses', () => HttpResponse.json({ items: [], nextCursor: null })),
   http.get('/api/v1/me/spot-statuses/summary', () => HttpResponse.json({ visited: 0, wantToGo: 0 })),
   http.get('/api/v1/spots/:id/comments', () => HttpResponse.json({ items: [], nextCursor: null })),
+  http.get('/api/v1/board-topics', () => HttpResponse.json({ items: [], nextCursor: null })),
+  http.get('/api/v1/board-topics/:id/replies', () => HttpResponse.json({ items: [], nextCursor: null })),
   http.get('/api/v1/users/:username/spots', () => HttpResponse.json({ items: [], nextCursor: null })),
   http.get('/api/v1/users/:username', ({ params }) => {
     // /users/me（本人の情報）は各テストで定義する

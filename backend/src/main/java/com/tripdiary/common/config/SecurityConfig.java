@@ -57,7 +57,10 @@ public class SecurityConfig {
         "/api/v1/users/*",
         "/api/v1/users/*/spots",
         "/api/v1/users/*/following",
-        "/api/v1/users/*/followers"
+        "/api/v1/users/*/followers",
+        "/api/v1/board-topics",
+        "/api/v1/board-topics/*",
+        "/api/v1/board-topics/*/replies"
     };
 
     /** ログイン中のユーザー本人の API。{@link #PUBLIC_READ_PATHS} の {@code /users/*} より先に判定する。 */

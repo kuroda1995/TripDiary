@@ -121,6 +121,8 @@ erDiagram
 | 8 | `comments` | コメント | コメント |
 | 9 | `follows` | フォロー関係 | フォロー / フォロワー |
 | 10 | `user_spot_statuses` | ユーザー別スポットステータス | 訪問済み / 行きたい |
+| 11 | `board_topics` | コミュニティ広場のトピック | 掲示板（V7） |
+| 12 | `board_replies` | コミュニティ広場の返信 | 掲示板（V7） |
 
 ---
 
@@ -319,6 +321,41 @@ erDiagram
 
 > ステータス設定は `INSERT ... ON CONFLICT (user_id, spot_id) DO UPDATE ... WHERE user_spot_statuses.status <> EXCLUDED.status` による UPSERT で行う（同じ値での再設定では `visited_at` / `updated_at` を変えない）。
 
+### 3.11 `board_topics`（コミュニティ広場のトピック）
+
+V7 で追加（[10_community_board.md](features/10_community_board.md)）。
+
+| カラム名 | 型 | 制約 | デフォルト | 説明 |
+| --- | --- | --- | --- | --- |
+| `id` | `BIGINT` | PK, IDENTITY | | トピックID |
+| `user_id` | `BIGINT` | NN, FK → `users.id` ON DELETE CASCADE | | 作成者 |
+| `title` | `VARCHAR(100)` | NN, CHECK（`char_length(trim(title)) >= 1`） | | タイトル |
+| `body` | `TEXT` | NN, CHECK（1〜2000文字） | | 本文 |
+| `last_activity_at` | `TIMESTAMPTZ` | NN | `now()` | 最後に書き込みがあった日時（作成時は `created_at`、返信のたびに進める） |
+| `created_at` | `TIMESTAMPTZ` | NN | `now()` | 作成日時 |
+
+インデックス:
+- `idx_board_topics_last_activity` : `(last_activity_at DESC, id DESC)` — 一覧（最後の書き込み順）・カーソルページング
+- `idx_board_topics_user_id` : `(user_id)` — 連鎖削除
+
+### 3.12 `board_replies`（コミュニティ広場の返信）
+
+V7 で追加。
+
+| カラム名 | 型 | 制約 | デフォルト | 説明 |
+| --- | --- | --- | --- | --- |
+| `id` | `BIGINT` | PK, IDENTITY | | 返信ID |
+| `topic_id` | `BIGINT` | NN, FK → `board_topics.id` ON DELETE CASCADE | | トピック |
+| `user_id` | `BIGINT` | NN, FK → `users.id` ON DELETE CASCADE | | 投稿者 |
+| `body` | `TEXT` | NN, CHECK（1〜1000文字） | | 本文 |
+| `created_at` | `TIMESTAMPTZ` | NN | `now()` | 投稿日時 |
+
+インデックス:
+- `idx_board_replies_topic_id_created_at` : `(topic_id, created_at, id)` — 返信一覧（古い順）・返信数の集計
+- `idx_board_replies_user_id` : `(user_id)` — 連鎖削除
+
+> 返信数は列に持たず、一覧に出すトピックの分を1回の SQL（`GROUP BY topic_id`）でまとめて数える。並び替えには使わないため、`like_count` のような非正規化はしていない。
+
 ---
 
 ## 4. リレーション一覧
@@ -339,6 +376,9 @@ erDiagram
 | `spots` | `user_spot_statuses` | `spot_id` | 1 : N | CASCADE |
 | `area_tags` | `spot_area_tags` | `area_tag_id` | 1 : N | RESTRICT |
 | `area_tags` | `area_tags` | `parent_id` | 1 : N（自己参照） | RESTRICT |
+| `users` | `board_topics` | `user_id` | 1 : N | CASCADE |
+| `users` | `board_replies` | `user_id` | 1 : N | CASCADE |
+| `board_topics` | `board_replies` | `topic_id` | 1 : N | CASCADE |
 
 多対多の関係:
 - `users` ⇔ `spots`（行ってみたい！）: `spot_likes`
