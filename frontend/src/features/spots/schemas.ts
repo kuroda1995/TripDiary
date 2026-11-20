@@ -2,7 +2,10 @@ import { z } from 'zod'
 import { MAX_PHOTOS } from '@/features/photos/prepareFile'
 import { existingPhoto, type PhotoItem } from '@/features/photos/types'
 import { todayInJapan } from '@/lib/date'
+import { emptyRatings, MAX_RATING, RATING_ITEMS, TEMPLE_FEATURES } from './temple'
 import type { Spot, SpotInput } from './types'
+
+const rating = z.number().int().min(1).max(MAX_RATING).nullable()
 
 /** 入力チェック（サーバー側 SpotRequest と同じルール。docs/features/02_spot.md 5章）。 */
 export const MAX_AREA_TAGS = 5
@@ -43,6 +46,8 @@ export const spotSchema = z.object({
       (photos) => photos.every((photo) => photo.status !== 'error'),
       'アップロードできなかった写真があります。再試行するか削除してください',
     ),
+  ratings: z.object({ tranquility: rating, beauty: rating, worship: rating, access: rating }),
+  templeFeatures: z.array(z.enum(TEMPLE_FEATURES)),
 })
 
 export type SpotFormValues = z.infer<typeof spotSchema>
@@ -55,6 +60,8 @@ export const emptySpotForm: SpotFormValues = {
   visitedOn: '',
   visibility: 'PUBLIC',
   photos: [],
+  ratings: emptyRatings,
+  templeFeatures: [],
 }
 
 export function toFormValues(spot: Spot): SpotFormValues {
@@ -68,6 +75,8 @@ export function toFormValues(spot: Spot): SpotFormValues {
     photos: [...spot.photos]
       .sort((a, b) => a.sortOrder - b.sortOrder)
       .map((photo) => existingPhoto(photo.s3Key, photo.url)),
+    ratings: spot.ratings ?? emptyRatings,
+    templeFeatures: spot.templeFeatures,
   }
 }
 
@@ -83,5 +92,8 @@ export function toSpotInput(values: SpotFormValues): SpotInput {
     photos: values.photos
       .flatMap((photo) => (photo.s3Key ? [photo.s3Key] : []))
       .map((s3Key, index) => ({ s3Key, sortOrder: index })),
+    // 1項目も評価していなければ「評価なし」として送る
+    ratings: RATING_ITEMS.some(({ key }) => values.ratings[key] !== null) ? values.ratings : null,
+    templeFeatures: TEMPLE_FEATURES.filter((feature) => values.templeFeatures.includes(feature)),
   }
 }

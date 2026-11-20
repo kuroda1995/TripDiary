@@ -1,19 +1,41 @@
 import { describe, expect, it } from 'vitest'
 import { areasFixture } from '@/test/msw/handlers'
-import { indexAreasBySlug, parseSearchParams, searchUrlForArea, toSearchParams } from './searchParams'
+import {
+  indexAreasBySlug,
+  parseSearchParams,
+  searchUrlForArea,
+  searchUrlForTempleFeature,
+  toSearchParams,
+} from './searchParams'
 
 describe('検索条件と URL の変換', () => {
-  it('エリア・キーワード・並び順を読み、往復しても同じになる', () => {
-    const params = new URLSearchParams('areas=kyoto,osaka&q=温泉&sort=popular')
+  it('エリア・キーワード・お寺の特徴・並び順を読み、往復しても同じになる', () => {
+    const params = new URLSearchParams('areas=kyoto,osaka&q=温泉&features=GOSHUIN,GARDEN&sort=popular')
     const condition = parseSearchParams(params)
 
-    expect(condition).toEqual({ areas: ['kyoto', 'osaka'], q: '温泉', sort: 'popular' })
+    expect(condition).toEqual({
+      areas: ['kyoto', 'osaka'],
+      q: '温泉',
+      features: ['GOSHUIN', 'GARDEN'],
+      sort: 'popular',
+    })
     expect(toSearchParams(condition).toString()).toBe(params.toString())
   })
 
   it('既定値（条件なし・新着順）は URL に出さない', () => {
-    expect(toSearchParams({ areas: [], q: '  ', sort: 'newest' }).toString()).toBe('')
-    expect(parseSearchParams(new URLSearchParams())).toEqual({ areas: [], q: '', sort: 'newest' })
+    expect(toSearchParams({ areas: [], q: '  ', features: [], sort: 'newest' }).toString()).toBe('')
+    expect(parseSearchParams(new URLSearchParams())).toEqual({
+      areas: [],
+      q: '',
+      features: [],
+      sort: 'newest',
+    })
+  })
+
+  it('お寺の特徴は知らない値・重複を除き、表示順にそろえる', () => {
+    const condition = parseSearchParams(new URLSearchParams('features=QUIET,ONSEN,GOSHUIN,QUIET,'))
+
+    expect(condition.features).toEqual(['GOSHUIN', 'QUIET'])
   })
 
   it('不正な並び順は新着順、エリアの空要素・重複は除き、上限を超えた分とキーワードの超過分は切り捨てる', () => {
@@ -38,5 +60,6 @@ describe('検索条件と URL の変換', () => {
 
   it('タグ1つで検索する URL を作る', () => {
     expect(searchUrlForArea('kyoto')).toBe('/search?areas=kyoto')
+    expect(searchUrlForTempleFeature('GOSHUIN')).toBe('/search?features=GOSHUIN')
   })
 })

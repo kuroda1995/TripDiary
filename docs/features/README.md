@@ -12,6 +12,7 @@ TripDiary の各機能の仕様をまとめたドキュメントです。全体�
 | 6 | [フォロー / フォロワー](06_follow.md) | FLW | `follows` |
 | 7 | [エリアタグ絞り込み検索](07_area_search.md) | SRCH | `area_tags`, `spot_area_tags` |
 | 8 | [スポットのステータス管理](08_spot_status.md) | STS | `user_spot_statuses` |
+| 9 | [お寺の評価・特徴タグ](09_temple_review.md) | TMPL | `spots`（`rating_*` / `temple_features`） |
 
 ## 各ドキュメントの構成
 

@@ -179,12 +179,20 @@ erDiagram
 | `created_at` | `TIMESTAMPTZ` | NN | `now()` | 投稿日時 |
 | `updated_at` | `TIMESTAMPTZ` | NN | `now()` | 更新日時 |
 | `like_count` | `BIGINT` | NN, CHECK（`>= 0`） | `0` | 「行ってみたい！」の件数（V5 で追加。非正規化） |
+| `rating_tranquility` | `SMALLINT` | CHECK（`NULL` または 1〜5） | `NULL` | お寺の評価: 静寂さ・雰囲気（V6） |
+| `rating_beauty` | `SMALLINT` | CHECK（`NULL` または 1〜5） | `NULL` | お寺の評価: 庭園・建築の美しさ（V6） |
+| `rating_worship` | `SMALLINT` | CHECK（`NULL` または 1〜5） | `NULL` | お寺の評価: 御朱印・参拝の充実度（V6） |
+| `rating_access` | `SMALLINT` | CHECK（`NULL` または 1〜5） | `NULL` | お寺の評価: アクセス・駐車場の停めやすさ（V6） |
+| `temple_features` | `VARCHAR(30)[]` | NN, CHECK（`<@ ARRAY['GOSHUIN','PARKING','GARDEN','CULTURAL_PROPERTY','QUIET']`） | `'{}'` | お寺の特徴タグ（V6。[09_temple_review.md](features/09_temple_review.md)） |
 
 インデックス:
 - `idx_spots_user_id_created_at` : `(user_id, created_at DESC)` — プロフィール・タイムライン
 - `idx_spots_public_created_at` : `(created_at DESC, id DESC) WHERE visibility = 'PUBLIC'` — 新着一覧（部分インデックス）
 - `idx_spots_public_like_count` : `(like_count DESC, created_at DESC, id DESC) WHERE visibility = 'PUBLIC'` — 人気順の検索・カーソルページング（V5）
 - `idx_spots_title_trgm` / `idx_spots_location_trgm` : `GIN (title gin_trgm_ops)` 等 — キーワード部分一致検索（`pg_trgm` 拡張、SRCH-04 対応時）
+- `idx_spots_public_temple_features` : `GIN (temple_features) WHERE visibility = 'PUBLIC'` — お寺の特徴タグでの絞り込み（`temple_features @> ARRAY[...]`。V6）
+
+> **お寺の特徴タグは別テーブルにせず配列の列で持つ。** 値は決まった5種類で、追加・変更はアプリのリリースと一緒に行う（マイグレーションで CHECK 制約を変える）。一覧で投稿ごとにタグを読み込むクエリが増えないこと、`@>` で「すべてのタグを持つ投稿」を GIN インデックスで引けることから選んだ。評価・特徴タグはどちらも任意で、お寺以外の旅行記録では使わない。
 
 > **`like_count` はトリガー `trg_spot_likes_like_count`（`spot_likes` の INSERT / DELETE の後に ±1）で保つ。** アプリから直接更新しないこと。アプリの経路だけでなく、ユーザー削除に伴う `spot_likes` の連鎖削除でも件数がずれないよう、DB 側で保っている。負荷テスト（[perf_test_report.md](./perf_test_report.md) 4章 #1）で人気順の検索が DB 負荷の大半を占めたため追加した。
 >

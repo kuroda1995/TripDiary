@@ -1,4 +1,5 @@
 import type { AreaTag } from '@/features/areas/types'
+import type { TempleFeature, TempleRatings } from './temple'
 
 export type Visibility = 'PUBLIC' | 'PRIVATE'
 
@@ -27,6 +28,10 @@ export type Spot = {
   impression: string | null
   visitedOn: string | null
   visibility: Visibility
+  /** お寺の5段階評価（すべて未評価なら null） */
+  ratings: TempleRatings | null
+  /** お寺の特徴タグ（表示順） */
+  templeFeatures: TempleFeature[]
   /** 表示順（先頭がカバー写真） */
   photos: SpotPhoto[]
   author: Author
@@ -48,6 +53,8 @@ export type SpotSummary = {
   impressionExcerpt: string | null
   visitedOn: string | null
   visibility: Visibility
+  ratings: TempleRatings | null
+  templeFeatures: TempleFeature[]
   coverPhotoUrl: string | null
   author: Author
   likeCount: number
@@ -72,4 +79,7 @@ export type SpotInput = {
   visitedOn: string | null
   visibility: Visibility
   photos: { s3Key: string; sortOrder: number }[]
+  /** すべて未評価なら null */
+  ratings: TempleRatings | null
+  templeFeatures: TempleFeature[]
 }

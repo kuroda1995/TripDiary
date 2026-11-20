@@ -4,6 +4,8 @@ import com.tripdiary.area.dto.AreaTagSummary;
 import com.tripdiary.spot.Spot;
 import com.tripdiary.spot.SpotReactions;
 import com.tripdiary.spot.SpotStatus;
+import com.tripdiary.spot.TempleFeature;
+import com.tripdiary.spot.TempleRatings;
 import com.tripdiary.spot.Visibility;
 import com.tripdiary.user.dto.UserResponse;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -22,6 +24,8 @@ public record SpotSummaryResponse(
         @Schema(description = "感想の先頭（最大120文字、省略時は末尾に…）", nullable = true) String impressionExcerpt,
         @Schema(nullable = true) LocalDate visitedOn,
         Visibility visibility,
+        @Schema(description = "お寺の5段階評価（すべて未評価なら null）", nullable = true) TempleRatings ratings,
+        @Schema(description = "お寺の特徴タグ（表示順）") List<TempleFeature> templeFeatures,
         @Schema(description = "カバー写真（先頭の写真）の URL。写真がなければ null", nullable = true)
                 String coverPhotoUrl,
         UserResponse author,
@@ -47,6 +51,8 @@ public record SpotSummaryResponse(
                 excerpt(spot.getImpression()),
                 spot.getVisitedOn(),
                 spot.getVisibility(),
+                spot.templeRatings(),
+                spot.templeFeatures(),
                 spot.coverPhoto().map(photo -> photoUrl.apply(photo.getS3Key())).orElse(null),
                 UserResponse.from(spot.getUser(), photoUrl),
                 reactions.likeCount(),

@@ -65,6 +65,12 @@ erDiagram
         NUMERIC longitude "NULL可"
         TIMESTAMPTZ created_at
         TIMESTAMPTZ updated_at
+        BIGINT like_count "行ってみたい！の件数（トリガーで保つ）"
+        SMALLINT rating_tranquility "NULL可 / 1〜5（お寺の評価）"
+        SMALLINT rating_beauty "NULL可 / 1〜5"
+        SMALLINT rating_worship "NULL可 / 1〜5"
+        SMALLINT rating_access "NULL可 / 1〜5"
+        VARCHAR_30_ARRAY temple_features "お寺の特徴タグ"
     }
 
     spot_photos {

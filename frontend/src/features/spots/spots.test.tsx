@@ -207,6 +207,9 @@ describe('スポット投稿', () => {
       visitedOn: null,
       visibility: 'PRIVATE',
       photos: [],
+      // お寺の評価・特徴を選ばなければ「なし」として送る
+      ratings: null,
+      templeFeatures: [],
     })
   })
 

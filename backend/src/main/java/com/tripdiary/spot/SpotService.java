@@ -23,7 +23,9 @@ import com.tripdiary.user.UserRepository;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.util.Collection;
 import java.util.Comparator;
+import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -138,23 +140,30 @@ public class SpotService {
     }
 
     /**
-     * 公開スポットの検索（docs/features/07_area_search.md）。エリアタグ（子孫タグを含む・OR）とキーワードは AND 条件。
+     * 公開スポットの検索（docs/features/07_area_search.md）。エリアタグ（子孫タグを含む・OR）・キーワード・お寺の特徴タグは AND 条件。
      *
      * <p>条件なしの新着順は {@link #listPublic} と同じ結果になる。
      *
      * @param areaTagIds 指定されたエリアタグ（空なら絞り込まない）
      * @param keyword キーワード（null・空白のみなら絞り込まない）
+     * @param templeFeatures お寺の特徴タグ（すべてを持つ投稿に絞る。空なら絞り込まない。docs/features/09_temple_review.md）
      */
     @Transactional(readOnly = true)
     public SpotPageResponse search(
             List<Long> areaTagIds,
             String keyword,
+            Collection<TempleFeature> templeFeatures,
             SpotSort sort,
             Long viewerId,
             String cursor,
             int limit) {
         String trimmed = keyword == null || keyword.isBlank() ? null : keyword.strip();
-        if (areaTagIds.isEmpty() && trimmed == null && sort == SpotSort.NEWEST) {
+        Set<TempleFeature> features =
+                templeFeatures.isEmpty() ? Set.of() : EnumSet.copyOf(templeFeatures);
+        if (areaTagIds.isEmpty()
+                && trimmed == null
+                && features.isEmpty()
+                && sort == SpotSort.NEWEST) {
             return listPublic(viewerId, cursor, limit);
         }
         Set<Long> tagIds =
@@ -162,7 +171,8 @@ public class SpotService {
         Hit after = cursor == null ? null : decodeCursor(cursor, sort);
 
         List<Hit> hits =
-                spotSearchRepository.search(new Criteria(tagIds, trimmed, sort), after, limit + 1);
+                spotSearchRepository.search(
+                        new Criteria(tagIds, trimmed, features, sort), after, limit + 1);
         boolean hasNext = hits.size() > limit;
         List<Hit> pageItems = hasNext ? hits.subList(0, limit) : hits;
         String nextCursor =
@@ -372,7 +382,9 @@ public class SpotService {
                 blankToNull(request.impression()),
                 request.visitedOn(),
                 request.visibility(),
-                areaTagService.getAllByIds(request.areaTagIds()));
+                areaTagService.getAllByIds(request.areaTagIds()),
+                request.ratings(),
+                request.templeFeatures() == null ? List.of() : request.templeFeatures());
     }
 
     private static String blankToNull(String value) {

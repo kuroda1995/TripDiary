@@ -27,8 +27,13 @@ public class SpotSearchRepository {
      *
      * @param areaTagIds 対象のエリアタグ ID（子孫タグ展開済み。空なら絞り込まない）
      * @param keyword タイトル・場所名の部分一致（null なら絞り込まない）
+     * @param templeFeatures お寺の特徴タグ（すべてを持つ投稿に絞る。空なら絞り込まない）
      */
-    public record Criteria(Collection<Long> areaTagIds, String keyword, SpotSort sort) {}
+    public record Criteria(
+            Collection<Long> areaTagIds,
+            String keyword,
+            Collection<TempleFeature> templeFeatures,
+            SpotSort sort) {}
 
     /** 検索結果の1件（カーソルを作るための並び替えの値を含む）。 */
     public record Hit(long id, Instant createdAt, long likeCount) {}
@@ -52,6 +57,13 @@ public class SpotSearchRepository {
             conditions.add(
                     "(s.title ILIKE :pattern ESCAPE '\\' OR s.location_name ILIKE :pattern ESCAPE '\\')");
             params.addValue("pattern", "%" + escapeLike(criteria.keyword()) + "%");
+        }
+        if (!criteria.templeFeatures().isEmpty()) {
+            // 指定したタグをすべて持つ投稿（@> は idx_spots_public_temple_features（GIN）を使える。V6）
+            conditions.add("s.temple_features @> CAST(ARRAY[:templeFeatures] AS VARCHAR(30)[])");
+            params.addValue(
+                    "templeFeatures",
+                    criteria.templeFeatures().stream().map(TempleFeature::name).toList());
         }
 
         String order;

@@ -8,6 +8,7 @@ import { StatusSelect } from '@/features/status/components/StatusSelect'
 import { formatDate } from '@/lib/date'
 import type { SpotSummary } from '../types'
 import { AreaTagBadges } from './AreaTagBadges'
+import { TempleFeatureBadges, TempleRatingSummary } from './TempleReview'
 
 /** 一覧のスポットカード。 */
 export function SpotCard({ spot }: { spot: SpotSummary }) {
@@ -37,6 +38,8 @@ export function SpotCard({ spot }: { spot: SpotSummary }) {
       </CardHeader>
       <CardContent className="space-y-3 text-sm">
         <AreaTagBadges tags={spot.areaTags} />
+        <TempleFeatureBadges features={spot.templeFeatures} />
+        <TempleRatingSummary ratings={spot.ratings} />
         {spot.impressionExcerpt && (
           <p className="whitespace-pre-line text-muted-foreground">{spot.impressionExcerpt}</p>
         )}

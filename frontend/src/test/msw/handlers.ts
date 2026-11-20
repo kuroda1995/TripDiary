@@ -59,6 +59,8 @@ export function spotFixture(overrides: Record<string, unknown> = {}) {
     impression: '開門直後に行くと人が少なくて最高でした。',
     visitedOn: '2026-10-03',
     visibility: 'PUBLIC',
+    ratings: null,
+    templeFeatures: [],
     photos: [],
     likeCount: 0,
     likedByMe: false,

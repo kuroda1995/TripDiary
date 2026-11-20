@@ -1,5 +1,7 @@
 package com.tripdiary.spot.dto;
 
+import com.tripdiary.spot.TempleFeature;
+import com.tripdiary.spot.TempleRatings;
 import com.tripdiary.spot.Visibility;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
@@ -32,4 +34,34 @@ public record SpotRequest(
         @Schema(description = "公開範囲", example = "PUBLIC") @NotNull(message = "公開範囲を選択してください")
                 Visibility visibility,
         @Schema(description = "写真（0〜10枚）。更新時は送信した配列で置き換える（含まれない写真は削除）。省略時は写真なし", nullable = true)
-                List<@Valid @NotNull PhotoRequest> photos) {}
+                List<@Valid @NotNull PhotoRequest> photos,
+        @Schema(description = "お寺の5段階評価（任意。省略・null は未評価）", nullable = true) @Valid
+                TempleRatings ratings,
+        @Schema(
+                        description = "お寺の特徴タグ（任意。重複は1つにまとめる）。省略時はタグなし",
+                        nullable = true,
+                        example = "[\"GOSHUIN\",\"GARDEN\"]")
+                @Size(max = 5, message = "特徴タグは5個まで選択できます")
+                List<@NotNull TempleFeature> templeFeatures) {
+
+    /** お寺の評価・特徴タグなしのリクエスト。 */
+    public SpotRequest(
+            String title,
+            String locationName,
+            List<Long> areaTagIds,
+            String impression,
+            LocalDate visitedOn,
+            Visibility visibility,
+            List<PhotoRequest> photos) {
+        this(
+                title,
+                locationName,
+                areaTagIds,
+                impression,
+                visitedOn,
+                visibility,
+                photos,
+                null,
+                null);
+    }
+}

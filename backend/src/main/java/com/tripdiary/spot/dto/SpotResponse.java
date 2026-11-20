@@ -5,6 +5,8 @@ import com.tripdiary.spot.Spot;
 import com.tripdiary.spot.SpotPhoto;
 import com.tripdiary.spot.SpotReactions;
 import com.tripdiary.spot.SpotStatus;
+import com.tripdiary.spot.TempleFeature;
+import com.tripdiary.spot.TempleRatings;
 import com.tripdiary.spot.Visibility;
 import com.tripdiary.user.dto.UserResponse;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -24,6 +26,8 @@ public record SpotResponse(
         @Schema(nullable = true) String impression,
         @Schema(nullable = true, example = "2026-10-03") LocalDate visitedOn,
         Visibility visibility,
+        @Schema(description = "お寺の5段階評価（すべて未評価なら null）", nullable = true) TempleRatings ratings,
+        @Schema(description = "お寺の特徴タグ（表示順）") List<TempleFeature> templeFeatures,
         @Schema(description = "写真（表示順。先頭がカバー写真）") List<SpotPhotoResponse> photos,
         UserResponse author,
         @Schema(description = "行ってみたい！の件数", example = "12") long likeCount,
@@ -47,6 +51,8 @@ public record SpotResponse(
                 spot.getImpression(),
                 spot.getVisitedOn(),
                 spot.getVisibility(),
+                spot.templeRatings(),
+                spot.templeFeatures(),
                 spot.getPhotos().stream()
                         .sorted(Comparator.comparingInt(SpotPhoto::getSortOrder))
                         .map(photo -> SpotPhotoResponse.from(photo, photoUrl))

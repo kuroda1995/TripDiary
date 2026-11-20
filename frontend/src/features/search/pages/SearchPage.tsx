@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input'
 import { useAreas } from '@/features/areas/api'
 import { spotKeys } from '@/features/spots/api'
 import { SpotList } from '@/features/spots/components/SpotList'
+import { TempleFeaturePicker } from '@/features/spots/components/TempleReviewFields'
 import { fetchSpotSearch, type SpotSearchQuery } from '../api'
 import { AreaFilter } from '../components/AreaFilter'
 import {
@@ -22,8 +23,8 @@ const SORT_LABELS: Record<SpotSort, string> = { newest: '新着順', popular: '�
 /**
  * 検索画面（docs/features/07_area_search.md 3章）。
  *
- * 条件は URL のクエリ（`?areas=kyoto,osaka&q=温泉&sort=popular`）だけに持ち、共有・ブラウザの戻る操作に対応する。
- * エリア・並び順は変えた時点で、キーワードは「検索」で反映する。
+ * 条件は URL のクエリ（`?areas=kyoto,osaka&q=温泉&features=GOSHUIN&sort=popular`）だけに持ち、共有・ブラウザの戻る操作に対応する。
+ * エリア・お寺の特徴・並び順は変えた時点で、キーワードは「検索」で反映する。
  */
 export function SearchPage() {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -44,6 +45,7 @@ export function SearchPage() {
     ? {
         areaIds: condition.areas.map((slug) => bySlug.get(slug)!.id),
         q: condition.q.trim(),
+        features: condition.features,
         sort: condition.sort,
       }
     : null
@@ -63,6 +65,11 @@ export function SearchPage() {
             onChange={(slugs) => update({ areas: slugs })}
           />
         )}
+        <TempleFeaturePicker
+          legend="お寺の特徴（選んだものをすべて満たす投稿）"
+          value={condition.features}
+          onChange={(features) => update({ features })}
+        />
         <div className="flex items-center gap-2 text-sm">
           <label htmlFor={sortId} className="font-medium">
             並び順
