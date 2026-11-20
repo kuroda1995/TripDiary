@@ -14,48 +14,18 @@
 ## 1. スキル図（技術スタック）
 
 ```mermaid
-mindmap
-  root((TripDiary))
-    Frontend
-      React 19
-      TypeScript
-      Vite
-      Tailwind CSS v4
-      shadcn/ui（Base UI）
-      React Router
-      TanStack Query
-      React Hook Form + Zod
-    Backend
-      Java 21
-      Spring Boot 4
-      Gradle
-      Spring Web
-      Spring Security + JWT
-      Spring Data JPA
-      Bean Validation
-      Flyway
-      springdoc-openapi
-      Logback（Spring Boot 構造化ログ）
-    Database
-      PostgreSQL 16
-    Infrastructure
-      AWS ALB
-      AWS ECS Fargate
-      AWS RDS
-      AWS S3
-      AWS CloudFront
-      AWS CloudWatch Logs
-      AWS Secrets Manager
-    Test
-      JUnit 5 / Mockito
-      Testcontainers
-      Vitest / React Testing Library / MSW
-      Playwright
-      k6
-    DevOps
-      GitHub
-      GitHub Actions
-      Docker / Docker Compose
+flowchart LR
+    root((TripDiary))
+
+    fe["<b>Frontend</b><br/>React 19<br/>TypeScript<br/>Vite<br/>Tailwind CSS v4<br/>shadcn/ui（Base UI）<br/>React Router<br/>TanStack Query<br/>React Hook Form + Zod<br/>motion"]
+    be["<b>Backend</b><br/>Java 21<br/>Spring Boot 4<br/>Gradle<br/>Spring Web<br/>Spring Security + JWT<br/>Spring Data JPA<br/>Bean Validation<br/>Flyway<br/>springdoc-openapi<br/>Logback（Spring Boot 構造化ログ）"]
+    db["<b>Database</b><br/>PostgreSQL 16"]
+    infra["<b>Infrastructure</b><br/>AWS ALB<br/>AWS ECS Fargate<br/>AWS RDS<br/>AWS S3<br/>AWS CloudFront<br/>AWS CloudWatch Logs<br/>AWS Secrets Manager"]
+    test["<b>Test</b><br/>JUnit 5 / Mockito<br/>Testcontainers<br/>Vitest / React Testing Library / MSW<br/>Playwright<br/>k6"]
+    devops["<b>DevOps</b><br/>GitHub<br/>GitHub Actions<br/>Docker / Docker Compose"]
+
+    root --- fe & be & db
+    root --- infra & test & devops
 ```
 
 ### 1.1 技術選定一覧
@@ -69,6 +39,7 @@ mindmap
 | Lint / Format | oxlint + Prettier | oxlint は Vite 標準テンプレートの Linter。ESLint 互換ルールを高速に検査 |
 | サーバー状態 | TanStack Query | キャッシュ・楽観的更新（いいね/フォローのトグル） |
 | フォーム | React Hook Form + Zod | クライアント側バリデーション |
+| アニメーション | motion（旧 Framer Motion） | 一覧カードの表示・ホバー、トグルボタンのタップ演出。OS の「視差効果を減らす」設定を尊重 |
 | 言語（BE） | Java 21 (LTS) | |
 | FW | Spring Boot 4 | Web MVC / Security / Data JPA / Actuator（3.x は OSS サポート終了のため 4.x を採用） |
 | 認証 | Spring Security + JWT（jjwt 等） | ステートレス認証。ALB 配下で水平スケール可能 |
