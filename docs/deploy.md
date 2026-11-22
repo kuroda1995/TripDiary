@@ -132,6 +132,7 @@ powershell -ExecutionPolicy Bypass -File infra/deploy.ps1
 | --- | --- | --- |
 | 2026-11-11 | 初回構築（54リソース） | `/api/*` が 504 → ALB のセキュリティグループを修正（1.2）して解消。E2E 17件をデモ環境に対して実行し、すべて成功。ERROR・WARN ログ 0件 |
 | 2026-11-11 | E2E のテストデータを削除（3.4）し、サンプルデータを投入（3.3） | トップ・ログイン・投稿詳細の表示を確認 |
+| 2026-11-22 | 待機モード（4章）を追加して新規作成 → サンプルデータ投入 → 待機 → 起動 → 待機 | 起動後もデータ（投稿13件・写真・コミュニティ4つ・ゲスト／作者用アカウント）と URL がそのまま。待機中はお知らせページと API の 503、ALB・ECS サービス・VPC オリジン・パブリック IPv4 が0件、RDS が停止中であることを確認。ERROR・WARN ログ 0件 |
 
 ### 3.2 動作確認
 
@@ -275,7 +276,7 @@ powershell -ExecutionPolicy Bypass -File infra/deploy.ps1 -SkipBackend -SkipFron
 
 1. RDS を止める予約を外し、RDS を起動して、使えるようになるまで待つ
 2. Terraform を `standby=false` で apply する（ALB・VPC オリジン・ECS サービスを作り、画面を元に戻す）
-3. CloudFront のキャッシュを消し、API が起動するまで待つ
+3. CloudFront のキャッシュを消し、URL から API（`/actuator/health`）に届くまで待つ（ECS の `services-stable` は ALB のヘルスチェックの合格までは待たず、その直後は数分 502 になるため）
 
 `-SkipBackend -SkipFrontend` で、待機前と同じイメージ・画面のまま起動する。コードを更新したときは外す。ALB と VPC オリジンの作成に時間がかかるため、**見てもらう前日か、遅くとも数時間前に起動する**。起動後は 3.2 の手順で、ゲストログインと投稿の表示を確認する。
 
@@ -284,6 +285,7 @@ powershell -ExecutionPolicy Bypass -File infra/deploy.ps1 -SkipBackend -SkipFron
 - **Terraform を直接 apply しない。** `standby` の値を渡し忘れると既定値（`false`＝起動）になる。切り替えは必ずスクリプトで行う。
 - **使い終わったら待機に戻す。** 起動したままにすると、1日 $1.6〜2.3 かかり続ける。
 - 待機中に AWS コンソールで RDS を起動しても、1時間以内に予約で停止される。
+- VPC オリジンには `create_before_destroy` を付けている。付けないと、Terraform がディストリビューションから参照を外す前に VPC オリジンを消そうとして、`409 CannotDeleteEntityWhileInUse` で失敗する（`-target` で分けても同じ）。この設定は状態ファイルにも記録され、削除の順番はその記録に従う。この設定より前に作った環境では、起動中に一度 `deploy.ps1` で apply してから待機モードにする。
 - 待機モードでも Free plan の期限（`aws freetier get-account-plan-state` の `accountPlanExpirationDate`）が来ると、アカウントごと使えなくなる。
 
 ---

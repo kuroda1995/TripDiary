@@ -55,6 +55,12 @@ resource "aws_cloudfront_origin_access_control" "s3" {
 resource "aws_cloudfront_vpc_origin" "api" {
   count = local.running
 
+  # 待機モードへの切り替えで、ディストリビューションから参照を外した「後」に消すため。
+  # 既定の順番では先に消そうとして、使用中のため失敗する（409 CannotDeleteEntityWhileInUse）
+  lifecycle {
+    create_before_destroy = true
+  }
+
   vpc_origin_endpoint_config {
     name                   = "${local.name}-api"
     arn                    = aws_lb.api[0].arn

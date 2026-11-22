@@ -6,7 +6,7 @@
   URL（CloudFront）とデータ（RDS・S3）を残したまま、費用のかかるものを止める。
 
   1. Terraform を standby=true で apply する
-     - ALB・VPC オリジン・ECS サービスを消し、画面をお知らせページに切り替える
+     - 画面をお知らせページに切り替え、ALB・VPC オリジン・ECS サービスを消す
      - RDS を1時間ごとに止める予約（EventBridge Scheduler）を作る（RDS は停止しても7日で自動起動するため）
   2. RDS を停止し、停止するまで待つ
   3. CloudFront のキャッシュを消す
@@ -34,7 +34,9 @@ Invoke-Native 'terraform init' { terraform "-chdir=$tf" init -input=false }
 $imageTag = Get-CurrentImageTag
 if (-not $imageTag) { throw 'デモ環境がまだありません。先に deploy.ps1 で作成してください' }
 
-Invoke-Native '待機モードに切り替え（ALB・ECS を削除、お知らせページに切り替え）' {
+# CloudFront を更新して VPC オリジンへの参照を外してから、VPC オリジン・ALB を消す
+# （順番は cdn.tf の create_before_destroy で決めている）
+Invoke-Native '待機モードに切り替え（お知らせページに切り替え、ALB・ECS を削除、RDS を止める予約を作成）' {
     terraform "-chdir=$tf" apply -input=false @approve '-var=standby=true' "-var=image_tag=$imageTag"
 }
 

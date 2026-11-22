@@ -120,7 +120,21 @@ Invoke-Native 'API の起動を待つ（数分かかります）' {
     aws ecs wait services-stable --cluster $cluster --services $service
 }
 
+# services-stable はタスク数がそろった時点で終わり、ALB のヘルスチェックの合格までは待たない
+# （サービスを作り直した直後は、ここで終わっても数分は 502 になる）。URL から実際に届くまで待つ
 $url = Get-TfOutput 'web_url'
+Write-Host '==> URL から API に届くのを待つ' -ForegroundColor Cyan
+$deadline = (Get-Date).AddMinutes(10)
+while ($true) {
+    try {
+        $health = Invoke-WebRequest "$url/actuator/health" -UseBasicParsing -TimeoutSec 10
+        if ($health.StatusCode -eq 200) { break }
+    }
+    catch { }
+    if ((Get-Date) -gt $deadline) { throw "10 分待っても $url/actuator/health に届きませんでした（ALB のターゲットの状態と API のログを確認する）" }
+    Start-Sleep -Seconds 15
+}
+
 Write-Host ''
 Write-Host "デプロイが完了しました: $url" -ForegroundColor Green
 Write-Host "ログ: aws logs tail $(Get-TfOutput 'log_group') --follow"
