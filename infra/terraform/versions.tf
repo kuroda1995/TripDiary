@@ -1,7 +1,8 @@
 # TripDiary のデモ環境（docs/deploy.md）
 #
 # - 状態ファイル（terraform.tfstate）は手元に置く（.gitignore 済み。秘密情報を含むためコミットしない）
-# - 数日だけ動かして `terraform destroy` で全部消す前提のため、削除保護・最終スナップショットは付けない
+# - 使わないときは待機モード（var.standby。infra/standby.ps1）にし、URL とデータを残して費用を抑える
+# - 完全に消すときは `terraform destroy`。削除保護・最終スナップショットは付けない
 terraform {
   required_version = ">= 1.10"
 

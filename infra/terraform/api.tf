@@ -29,8 +29,15 @@ resource "aws_ecr_lifecycle_policy" "api" {
 }
 
 # ---- ALB（内部向け。インターネットからは直接届かない） ----
+# ALB は止めておけず、置いておくだけで費用がかかるため、待機モード（var.standby）では作らない
+
+locals {
+  # 起動中（待機モードでない）ときだけ作るリソースの count
+  running = var.standby ? 0 : 1
+}
 
 resource "aws_lb" "api" {
+  count              = local.running
   name               = "${local.name}-api"
   internal           = true
   load_balancer_type = "application"
@@ -39,6 +46,7 @@ resource "aws_lb" "api" {
 }
 
 resource "aws_lb_target_group" "api" {
+  count       = local.running
   name        = "${local.name}-api"
   port        = 8080
   protocol    = "HTTP"
@@ -59,13 +67,14 @@ resource "aws_lb_target_group" "api" {
 }
 
 resource "aws_lb_listener" "api_http" {
-  load_balancer_arn = aws_lb.api.arn
+  count             = local.running
+  load_balancer_arn = aws_lb.api[0].arn
   port              = 80
   protocol          = "HTTP"
 
   default_action {
     type             = "forward"
-    target_group_arn = aws_lb_target_group.api.arn
+    target_group_arn = aws_lb_target_group.api[0].arn
   }
 }
 
@@ -198,7 +207,10 @@ resource "aws_ecs_task_definition" "api" {
   depends_on = [aws_secretsmanager_secret_version.jwt]
 }
 
+# 待機モードではサービスごと消す（タスク数を0にするだけだと、ALB のないターゲットグループを参照することになる）。
+# クラスター・タスク定義・ECR のイメージは費用がかからないため残し、起動時は同じイメージで作り直す
 resource "aws_ecs_service" "api" {
+  count           = local.running
   name            = "${local.name}-api"
   cluster         = aws_ecs_cluster.main.id
   task_definition = aws_ecs_task_definition.api.arn
@@ -215,7 +227,7 @@ resource "aws_ecs_service" "api" {
   }
 
   load_balancer {
-    target_group_arn = aws_lb_target_group.api.arn
+    target_group_arn = aws_lb_target_group.api[0].arn
     container_name   = "api"
     container_port   = 8080
   }

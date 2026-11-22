@@ -25,7 +25,23 @@ output "ecs_cluster" {
 }
 
 output "ecs_service" {
-  value = aws_ecs_service.api.name
+  description = "API の ECS サービス名（待機モードでは空）"
+  value       = one(aws_ecs_service.api[*].name)
+}
+
+output "api_image" {
+  description = "タスク定義のイメージ（standby.ps1・deploy.ps1 -SkipBackend が同じイメージを使い続けるために読む）"
+  # タスク定義はゲストのパスワード（sensitive）を含むが、イメージ名は秘密ではないため取り出して出力する
+  value = nonsensitive(jsondecode(aws_ecs_task_definition.api.container_definitions)[0].image)
+}
+
+output "db_identifier" {
+  value = aws_db_instance.main.identifier
+}
+
+output "standby" {
+  description = "待機モードかどうか"
+  value       = var.standby
 }
 
 output "log_group" {

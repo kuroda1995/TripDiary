@@ -1,6 +1,8 @@
 # CloudFront
 #
 # web: 画面（S3）と API（/api/*・/actuator/health → ALB）を同じドメインで配信する。
+#      待機モード（var.standby）では API への経路を外し、すべてのページでお知らせページを返す。
+#      ディストリビューションは消さないため、URL（*.cloudfront.net）は変わらない。
 #      リフレッシュトークンの Cookie は SameSite=Strict のため、画面と API が同じサイトである必要がある。
 #      ALB は内部向けのまま、CloudFront の VPC オリジンで接続する（ALB をインターネットに公開しない）。
 # photos: 写真バケットの配信（PHOTO_BASE_URL）。
@@ -51,9 +53,11 @@ resource "aws_cloudfront_origin_access_control" "s3" {
 }
 
 resource "aws_cloudfront_vpc_origin" "api" {
+  count = local.running
+
   vpc_origin_endpoint_config {
     name                   = "${local.name}-api"
-    arn                    = aws_lb.api.arn
+    arn                    = aws_lb.api[0].arn
     http_port              = 80
     https_port             = 443
     origin_protocol_policy = "http-only"
@@ -73,8 +77,28 @@ resource "aws_cloudfront_function" "spa_rewrite" {
   code    = file("${path.module}/functions/spa-rewrite.js")
 }
 
+# 待機モードの画面: すべてのページをお知らせページ（standby.html）に書き換え、API には 503 を返す
+resource "aws_cloudfront_function" "standby" {
+  name    = "${local.name}-standby"
+  runtime = "cloudfront-js-2.0"
+  comment = "Serve the standby notice while the API is stopped"
+  publish = true
+  code    = file("${path.module}/functions/standby.js")
+}
+
+# お知らせページは起動中も置いておく（deploy.ps1 の S3 同期では消さない）
+resource "aws_s3_object" "standby_page" {
+  bucket        = aws_s3_bucket.web.id
+  key           = "standby.html"
+  source        = "${path.module}/pages/standby.html"
+  etag          = filemd5("${path.module}/pages/standby.html")
+  content_type  = "text/html; charset=utf-8"
+  cache_control = "no-cache"
+}
+
 locals {
-  api_paths = ["/api/*", "/actuator/health"]
+  # 待機モードでは API への経路を作らない（/api/* も既定の動作に入り、standby.js が 503 を返す）
+  api_paths = var.standby ? [] : ["/api/*", "/actuator/health"]
 }
 
 resource "aws_cloudfront_distribution" "web" {
@@ -90,12 +114,15 @@ resource "aws_cloudfront_distribution" "web" {
     origin_access_control_id = aws_cloudfront_origin_access_control.s3.id
   }
 
-  origin {
-    origin_id   = "api"
-    domain_name = aws_lb.api.dns_name
+  dynamic "origin" {
+    for_each = aws_lb.api
+    content {
+      origin_id   = "api"
+      domain_name = origin.value.dns_name
 
-    vpc_origin_config {
-      vpc_origin_id = aws_cloudfront_vpc_origin.api.id
+      vpc_origin_config {
+        vpc_origin_id = aws_cloudfront_vpc_origin.api[0].id
+      }
     }
   }
 
@@ -109,7 +136,7 @@ resource "aws_cloudfront_distribution" "web" {
 
     function_association {
       event_type   = "viewer-request"
-      function_arn = aws_cloudfront_function.spa_rewrite.arn
+      function_arn = var.standby ? aws_cloudfront_function.standby.arn : aws_cloudfront_function.spa_rewrite.arn
     }
   }
 

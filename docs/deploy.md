@@ -2,10 +2,10 @@
 
 | 項目 | 内容 |
 | --- | --- |
-| 対象 | TripDiary のデモ環境（メンターレビュー用。数日だけ動かして削除する） |
-| 作成日 | 2026-11-11 |
+| 対象 | TripDiary のデモ環境（メンターレビュー・選考用。見てもらうときだけ起動し、それ以外は待機モードにする） |
+| 作成日 | 2026-11-11（更新: 2026-11-22 待機モードを追加） |
 | 関連資料 | [architecture.md](./architecture.md) / [rules.md](./rules.md) |
-| コード | [infra/terraform/](../infra/terraform/)（Terraform）、[infra/deploy.ps1](../infra/deploy.ps1)（デプロイスクリプト）、[backend/Dockerfile](../backend/Dockerfile) |
+| コード | [infra/terraform/](../infra/terraform/)（Terraform）、[infra/deploy.ps1](../infra/deploy.ps1)（作成・更新・起動）、[infra/standby.ps1](../infra/standby.ps1)（待機）、[backend/Dockerfile](../backend/Dockerfile) |
 
 ---
 
@@ -79,7 +79,13 @@ flowchart LR
 | パブリック IPv4、Secrets Manager、CloudWatch Logs、S3、CloudFront など | 約 $0.3 |
 | **合計** | **約 $2.3/日（3日で約 $7）** |
 
-AWS の無料プラン（Free plan）のクレジットから差し引かれる。
+AWS の無料プラン（Free plan）のクレジットから差し引かれる。2026-11-21〜22 に約1日動かした実績は約 $1.6 だった。
+
+使わない間は [待機モード](#4-待機モード) にすると、URL を変えずに約 $0.1/日（主に RDS のストレージ代）まで下げられる。クレジットの残りと期限は次で確認できる。
+
+```powershell
+aws freetier get-account-plan-state
+```
 
 ---
 
@@ -156,7 +162,13 @@ Remove-Item Env:DEMO_PASSWORD, Env:OWNER_PASSWORD
 
 **ゲストログイン**（[01_auth.md 4.8](./features/01_auth.md#48-ゲストログイン-get-authguest)）を使う場合は、デプロイ前に `DEMO_PASSWORD` と同じ値を Terraform の変数 `guest_password` に渡す（ゲストはハルカ。`guest_email` で変更可）。設定しなければゲストログインは表示されない。パスワードはログイン画面に表示されるため、ほかで使っていない値にすること。
 
+待機と起動を繰り返すたびに渡し忘れないよう、手元のファイル `infra/terraform/guest.auto.tfvars` に書いておくのがおすすめ（Terraform が自動で読み込む。`*.auto.tfvars` は `.gitignore` 済みでコミットされない）。どちらもないと、スクリプトが注意を表示する。
+
 ```powershell
+# おすすめ: ファイルに書いておく（コミットされない）
+Set-Content infra/terraform/guest.auto.tfvars 'guest_password = "<DEMO_PASSWORD と同じ値>"' -Encoding ascii
+
+# または、その都度環境変数で渡す
 $env:TF_VAR_guest_password = '<DEMO_PASSWORD と同じ値>'
 powershell -ExecutionPolicy Bypass -File infra/deploy.ps1
 ```
@@ -219,7 +231,66 @@ TRUNCATE users RESTART IDENTITY CASCADE;
 
 ---
 
-## 4. 削除
+## 4. 待機モード
+
+見てもらう予定がない間は、**URL とデータを残したまま、費用のかかるものだけを止める**。毎回 `terraform destroy` で消すと、作り直すたびに CloudFront の URL（`*.cloudfront.net`）が変わってしまうため。
+
+### 4.1 待機中に残すもの・止めるもの
+
+| リソース | 待機中 | 理由 |
+| --- | --- | --- |
+| CloudFront（web・photos）・S3 | 残す | URL を変えないため。費用はほぼかからない |
+| RDS | **停止**（データは残る） | かかるのはストレージ代（20GB）だけになる |
+| ALB・VPC オリジン | **削除** | ALB は止めておけず、置いておくだけで約 $0.6/日かかるため |
+| ECS サービス | **削除** | タスク定義と ECR のイメージは残し、起動時に同じイメージで作り直す |
+| RDS を止める予約（EventBridge Scheduler） | **待機中だけ作る** | RDS は停止しても7日で自動的に起動するため、1時間ごとに停止を試みる |
+| VPC・Secrets Manager・CloudWatch Logs・ECR | 残す | 費用はほぼかからない |
+
+待機中は、どのページを開いても **お知らせページ**（[pages/standby.html](../infra/terraform/pages/standby.html)）を表示する。「デモ環境は停止中であること」と GitHub・設計資料へのリンクを載せ、採用担当者の方などが開いても壊れた画面に見えないようにしている。切り替えは CloudFront Functions（[functions/standby.js](../infra/terraform/functions/standby.js)）で行い、`/api/*` には 503 を返す。
+
+```mermaid
+flowchart LR
+    user([ブラウザ]) -->|HTTPS| cf["CloudFront（web）<br/>URL は変わらない"]
+    cf --> fn["CloudFront Functions<br/>standby.js"] --> page["S3<br/>standby.html（お知らせ）"]
+    sched["EventBridge Scheduler<br/>1時間ごと"] -.->|停止| rds[("RDS（停止中）<br/>データは残る")]
+```
+
+### 4.2 待機モードにする
+
+```powershell
+powershell -ExecutionPolicy Bypass -File infra/standby.ps1
+```
+
+1. Terraform を `standby=true` で apply する（ALB・VPC オリジン・ECS サービスを削除し、お知らせページに切り替え、RDS を止める予約を作る）
+2. RDS を停止し、停止するまで待つ
+3. CloudFront のキャッシュを消す
+
+CloudFront の更新と VPC オリジンの削除があるため、10〜20 分ほどかかる。
+
+### 4.3 起動する
+
+```powershell
+powershell -ExecutionPolicy Bypass -File infra/deploy.ps1 -SkipBackend -SkipFrontend
+```
+
+1. RDS を止める予約を外し、RDS を起動して、使えるようになるまで待つ
+2. Terraform を `standby=false` で apply する（ALB・VPC オリジン・ECS サービスを作り、画面を元に戻す）
+3. CloudFront のキャッシュを消し、API が起動するまで待つ
+
+`-SkipBackend -SkipFrontend` で、待機前と同じイメージ・画面のまま起動する。コードを更新したときは外す。ALB と VPC オリジンの作成に時間がかかるため、**見てもらう前日か、遅くとも数時間前に起動する**。起動後は 3.2 の手順で、ゲストログインと投稿の表示を確認する。
+
+### 4.4 注意
+
+- **Terraform を直接 apply しない。** `standby` の値を渡し忘れると既定値（`false`＝起動）になる。切り替えは必ずスクリプトで行う。
+- **使い終わったら待機に戻す。** 起動したままにすると、1日 $1.6〜2.3 かかり続ける。
+- 待機中に AWS コンソールで RDS を起動しても、1時間以内に予約で停止される。
+- 待機モードでも Free plan の期限（`aws freetier get-account-plan-state` の `accountPlanExpirationDate`）が来ると、アカウントごと使えなくなる。
+
+---
+
+## 5. 削除
+
+すべてのリソースを消す（URL も変わる）。待機モード中でもそのまま実行できる。
 
 ```powershell
 terraform -chdir=infra/terraform destroy
@@ -232,7 +303,7 @@ terraform -chdir=infra/terraform destroy
 
 ---
 
-## 5. 既知の制約
+## 6. 既知の制約
 
 | 項目 | 内容 |
 | --- | --- |

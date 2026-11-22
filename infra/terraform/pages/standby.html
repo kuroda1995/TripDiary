@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <title>TripDiary（デモ環境は停止中です）</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <!-- 待機モード（docs/deploy.md 4章）のお知らせページ。CloudFront Functions（functions/standby.js）がすべてのページをここに書き換える -->
+    <style>
+      :root {
+        --bg: #f7f7f5;
+        --card: #ffffff;
+        --text: #1f2328;
+        --muted: #59636e;
+        --border: #d8dee4;
+        --accent: #0969da;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #0d1117;
+          --card: #161b22;
+          --text: #e6edf3;
+          --muted: #9198a1;
+          --border: #30363d;
+          --accent: #4493f8;
+        }
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        padding: 24px 16px;
+        background: var(--bg);
+        color: var(--text);
+        font-family: system-ui, -apple-system, 'Hiragino Sans', 'Yu Gothic UI', 'Meiryo', sans-serif;
+        line-height: 1.8;
+      }
+      main {
+        width: 100%;
+        max-width: 560px;
+        padding: 32px 28px;
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+      }
+      h1 {
+        margin: 0 0 4px;
+        font-size: 1.5rem;
+      }
+      .status {
+        margin: 0 0 20px;
+        color: var(--muted);
+      }
+      p {
+        margin: 0 0 16px;
+      }
+      ul {
+        margin: 0 0 16px;
+        padding-left: 1.25em;
+      }
+      a {
+        color: var(--accent);
+        font-weight: 600;
+      }
+      .note {
+        margin: 0;
+        font-size: 0.875rem;
+        color: var(--muted);
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>🧳 TripDiary</h1>
+      <p class="status">デモ環境は現在停止中です</p>
+      <p>
+        TripDiary は、旅先やお寺参拝の思い出を写真と感想で記録し、共有できる旅行記録・SNS アプリです。
+        費用を抑えるため、デモ環境は選考などでご覧いただく期間だけ公開しています。
+      </p>
+      <p>ソースコードと設計資料は GitHub でご覧いただけます。</p>
+      <ul>
+        <li><a href="https://github.com/kuroda1995/TripDiary">GitHub リポジトリ（README）</a></li>
+        <li><a href="https://github.com/kuroda1995/TripDiary/blob/main/docs/tech-selection.md">技術選定理由・UX/UI へのこだわり</a></li>
+        <li><a href="https://github.com/kuroda1995/TripDiary/blob/main/docs/architecture.md">アーキテクチャ設計書</a></li>
+      </ul>
+      <p class="note">動作するアプリをご覧になりたい場合は、ご連絡いただければデモ環境を起動いたします。</p>
+    </main>
+  </body>
+</html>

@@ -69,8 +69,10 @@ resource "aws_security_group" "alb" {
 }
 
 # CloudFront の VPC オリジンからの通信は、CloudFront が VPC 内に作るセキュリティグループ
-# （CloudFront-VPCOrigins-Service-SG）を参照して許可する。VPC の CIDR で許可しても通らない
+# （CloudFront-VPCOrigins-Service-SG）を参照して許可する。VPC の CIDR で許可しても通らない。
+# このセキュリティグループは VPC オリジンがあるときだけ存在するため、待機モードでは参照しない
 data "aws_security_group" "cloudfront_vpc_origins" {
+  count  = local.running
   name   = "CloudFront-VPCOrigins-Service-SG"
   vpc_id = aws_vpc.main.id
 
@@ -78,9 +80,10 @@ data "aws_security_group" "cloudfront_vpc_origins" {
 }
 
 resource "aws_vpc_security_group_ingress_rule" "alb_http" {
+  count                        = local.running
   security_group_id            = aws_security_group.alb.id
   description                  = "HTTP from CloudFront VPC origin"
-  referenced_security_group_id = data.aws_security_group.cloudfront_vpc_origins.id
+  referenced_security_group_id = data.aws_security_group.cloudfront_vpc_origins[0].id
   ip_protocol                  = "tcp"
   from_port                    = 80
   to_port                      = 80
