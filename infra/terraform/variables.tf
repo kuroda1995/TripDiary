@@ -53,6 +53,16 @@ variable "guest_password" {
   sensitive   = true
 }
 
+variable "standby" {
+  description = <<-EOT
+    待機モード（docs/deploy.md 4章）。true にすると、URL（CloudFront）とデータ（RDS・S3）を残したまま、
+    費用のかかる ALB・ECS サービスを消し、画面をお知らせページに切り替える。RDS の停止は standby.ps1 が行う。
+    切り替えは infra/standby.ps1（待機）/ infra/deploy.ps1（起動）で行い、直接 apply しない
+  EOT
+  type        = bool
+  default     = false
+}
+
 variable "log_retention_days" {
   description = "CloudWatch Logs の保持日数（デモ環境のため短くする）"
   type        = number
